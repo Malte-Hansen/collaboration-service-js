@@ -35,8 +35,8 @@ export class RoomService {
         return this.rooms.has(room.getRoomId())
     }
 
-    getRooms(): IterableIterator<Room> {
-        return this.rooms.values();
+    getRooms(): Room[] {
+        return Array.from(this.rooms.values());
     }
 
     // TODO deleteRoomIfEmpty

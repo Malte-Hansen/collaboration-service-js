@@ -3,20 +3,39 @@ import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect,
 import { Server, Socket } from 'socket.io';
 import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/example-message';
 import { PubsubService } from 'src/pubsub/pubsub.service';
+import { SessionService } from 'src/session/session.service';
+import { TicketService } from 'src/ticket/ticket.service';
+import { Session } from 'src/util/session';
 
 @WebSocketGateway()
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
-  constructor(@Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService) {}
+  constructor(@Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService, 
+    private readonly ticketService: TicketService,
+    private readonly sessionService: SessionService) {}
 
   @WebSocketServer()
   server: Server;
 
-  handleConnection(client: any, ...args: any[]) {
+  handleConnection(client: Socket) {
+
+    // Redeem ticket
+    const ticketId: string = (client.handshake.query.ticketId as string);
+    const ticket = this.ticketService.redeemTicket(ticketId);
+    const room = ticket.getRoom();
+    const user = ticket.getUser();
+
+    // Register session
+    const session = new Session(client, room, user);
+    this.sessionService.register(session);
+
+    // Add user to the room
+    room.getUserModifier().addUser(user);
+
     console.log('WebSocket connected');
   }
 
-  handleDisconnect(client: any) {
+  handleDisconnect(client: Socket) {
     console.log('WebSocket disconnected');
   }
 

@@ -1,20 +1,19 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { WebsocketModule } from './websocket/websocket.module';
-import { ModelModule } from './model/model.module';
 import { RedisModule } from '@liaoliaots/nestjs-redis';
-import { PubsubModule } from './pubsub/pubsub.module';
 import { RoomService } from './room/room.service';
 import { IdGenerationService } from './id-generation/id-generation.service';
 import { RoomFactoryService } from './factory/room-factory/room-factory.service';
-import { ExampleFactoryService } from './factory/example-factory/example-factory.service';
 import { ExampleModifierFactoryService } from './factory/example-modifier-factory/example-modifier-factory.service';
-import { UserModifierService } from './factory/user-modifier/user-modifier.service';
 import { UserModifierFactoryService } from './factory/user-modifier-factory/user-modifier-factory.service';
+import { WebsocketGateway } from './websocket/websocket.gateway';
+import { PubsubService } from './pubsub/pubsub.service';
+import { TicketService } from './ticket/ticket.service';
+import { SessionService } from './session/session.service';
 
 @Module({
-  imports: [WebsocketModule, ModelModule, PubsubModule,
+  imports: [
     RedisModule.forRoot({
       config: {
         host: 'localhost',
@@ -24,7 +23,7 @@ import { UserModifierFactoryService } from './factory/user-modifier-factory/user
     })
 ],
   controllers: [AppController],
-  providers: [AppService, RoomService, IdGenerationService, RoomFactoryService, ExampleFactoryService, ExampleModifierFactoryService, UserModifierService, UserModifierFactoryService],
+  providers: [AppService, RoomService, WebsocketGateway, PubsubService, IdGenerationService, RoomFactoryService, ExampleModifierFactoryService, UserModifierFactoryService, TicketService, SessionService],
   exports: []
 })
 export class AppModule {}
