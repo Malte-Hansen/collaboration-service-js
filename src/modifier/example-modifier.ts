@@ -1,8 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { Example } from './example.model';
+import { Example } from "src/model/example-model";
 
-@Injectable()
-export class ExampleService {
+export class ExampleModifier {
 
     private example: Example;
 

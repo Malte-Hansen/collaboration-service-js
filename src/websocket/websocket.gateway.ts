@@ -1,13 +1,13 @@
+import { Inject, forwardRef } from '@nestjs/common';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/example-message';
-import { ModelService } from 'src/model/model.service';
 import { PubsubService } from 'src/pubsub/pubsub.service';
 
 @WebSocketGateway()
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
-  constructor(private modelService: ModelService, private pubsubService: PubsubService) {}
+  constructor(@Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService) {}
 
   @WebSocketServer()
   server: Server;
@@ -22,11 +22,11 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage(EXAMPLE_EVENT)
   handleMessage(@MessageBody() message: ExampleMessage, @ConnectedSocket() client: Socket): void {
-    console.log('Received: ', message);
-    this.modelService.handleExampleMessage(message);
-    this.server.emit('example', "Ok");
     this.pubsubService.publishForwardedMessage(message);
+  }
 
+  sendForwardedMessage(message: ExampleMessage): void {
+    this.server.emit('forward', message);
   }
 
 }
