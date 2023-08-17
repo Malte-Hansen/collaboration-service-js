@@ -1,16 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { PubsubService } from 'src/pubsub/pubsub.service';
 
 @Injectable()
 export class IdGenerationService {
 
-    private id: number;
+    constructor(private readonly pubsubService: PubsubService) {}
 
-    constructor() {
-        this.id = 0;
-    }
-
-    nextId(): string {
-        this.id++;
-        return this.id.toString();
+    async nextId(): Promise<string> {
+        return (await this.pubsubService.getUniqueId()).toString();
     }
 }

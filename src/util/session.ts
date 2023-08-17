@@ -15,16 +15,13 @@ export class Session {
      * The room the user who connected via the websocket is in.
      */
     private readonly room: Room;
+
+    private readonly userId: string;
   
-    /**
-     * The model of the user who is connected via this session.
-     */
-    private readonly user: UserModel;
-  
-    constructor(socket: Socket, room: Room, user: UserModel) {
+    constructor(socket: Socket, room: Room, userId: string) {
       this.socket = socket;
       this.room = room;
-      this.user = user;
+      this.userId = userId;
     }
   
     getSocket(): Socket {
@@ -35,8 +32,8 @@ export class Session {
       return this.room;
     }
   
-    getUser(): UserModel {
-      return this.user;
+    getUserId(): string {
+      return this.userId;
     }
 
     // TODO send method?

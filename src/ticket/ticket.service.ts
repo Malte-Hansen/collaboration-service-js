@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { IdGenerationService } from 'src/id-generation/id-generation.service';
 import { Room } from 'src/model/room-model';
 import { UserModel } from 'src/model/user-model';
 import { RoomService } from 'src/room/room.service';
@@ -32,32 +33,19 @@ export class TicketService {
    */
     private tickets: Map<string,Ticket>;
 
-
-  /**
-   * Generates an unpredictable identifier for a ticket.
-   *
-   * Since the tickets are used for authentication, they must be unpredictable. Thus, the regular ID
-   * generation service cannot be used.
-   *
-   * @return The generated ticket identifier.
-   */
-    private generateTicketId(): string {
-        return uuidv4();
+    registerTicket(ticket: Ticket) {
+        this.tickets.set(ticket.getTicketId(), ticket);
     }
 
-  /**
-   * Creates a new ticket for joining the the given room as the given user.
-   *
-   * @param room The room to join.
-   * @param user The user who wants to join the room.
-   * @return A ticket that allows the user to join the room.
-   */
-    drawTicket(room: Room, user: UserModel): Ticket {
-        const ticketId = this.generateTicketId();
+    unregisterTicket(ticketId: string) {
+        this.tickets.delete(ticketId);
+    }
+
+    drawTicket(roomId: string, userId: string): Ticket {
+        const ticketId = uuidv4();
         var validUntil = new Date();
         validUntil.setSeconds(validUntil.getSeconds() + this.TICKET_EXPIRY_PERIOD_IN_SECONDS);
-        const ticket = new Ticket(ticketId, room, user, validUntil);
-        this.tickets.set(ticketId, ticket);
+        const ticket = new Ticket(ticketId, roomId, userId, validUntil);
         return ticket;
     }
 
@@ -69,19 +57,17 @@ export class TicketService {
 
         // Get and remove the ticket.
         const ticket = this.tickets.get(ticketId);
-        this.tickets.delete(ticketId);
+        //this.tickets.delete(ticketId);
 
         // Ensure that the room still exists.
-        const room = ticket.getRoom();
-        if (!this.roomService.roomExists(room)) {
-            throw new Error("Room " + room.getRoomId() + " for ticket " + ticketId + " has been closed");
+        const roomId = ticket.getRoomId();
+        if (!this.roomService.roomExists(roomId)) {
+            throw new Error("Room " + roomId + " for ticket " + ticketId + " has been closed");
         }
 
         // Test whether the ticket is still valid.
         const expiryDate = ticket.getValidUntil();
         if (new Date() > expiryDate) {
-            // Notify the user service that the user model is not needed anymore.
-            room.getUserModifier().removeUser(ticket.getUser());
 
             throw new Error("Ticket " + ticketId + " expired at " + expiryDate.toDateString())
         }

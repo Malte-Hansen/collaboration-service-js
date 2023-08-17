@@ -1,21 +1,16 @@
-import { IdGenerationService } from "src/id-generation/id-generation.service";
 import { State, UserModel } from "src/model/user-model";
 
 export class UserModifier {
 
   private users: Map<string, UserModel> = new Map();
 
-  constructor(
-    private readonly idGenerationService: IdGenerationService,
-  ) {}
-
+  constructor() {}
 
   updateSpectating(user: UserModel, isSpectating: boolean): void {
     user.setState(isSpectating ? State.SPECTATING : State.CONNECTED);
   }
 
-  makeUserModel(userName: string): UserModel {
-    const userId = this.idGenerationService.nextId();
+  makeUserModel(userId: string, userName: string): UserModel {
     // TODO assign color
     return new UserModel(userId, userName);
   }

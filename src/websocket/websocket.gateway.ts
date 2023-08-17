@@ -3,6 +3,7 @@ import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect,
 import { Server, Socket } from 'socket.io';
 import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/example-message';
 import { PubsubService } from 'src/pubsub/pubsub.service';
+import { RoomService } from 'src/room/room.service';
 import { SessionService } from 'src/session/session.service';
 import { TicketService } from 'src/ticket/ticket.service';
 import { Session } from 'src/util/session';
@@ -12,25 +13,38 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   constructor(@Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService, 
     private readonly ticketService: TicketService,
-    private readonly sessionService: SessionService) {}
+    private readonly sessionService: SessionService,
+    private readonly roomService: RoomService) {}
 
   @WebSocketServer()
   server: Server;
 
   handleConnection(client: Socket) {
 
-    // Redeem ticket
+    // Query params
     const ticketId: string = (client.handshake.query.ticketId as string);
+    const userName: string = (client.handshake.query.userName as string);
+    // TODO query params for user position ? 
+
+    // Redeem ticket
     const ticket = this.ticketService.redeemTicket(ticketId);
-    const room = ticket.getRoom();
-    const user = ticket.getUser();
+    const room = this.roomService.lookupRoom(ticket.getRoomId());
+
+    // Remove ticket
+    this.pubsubService.publishUnregisterTicket({ticketId});
+
+    // Join user
+    this.pubsubService.publishJoinUserMessage({roomId: room.getRoomId(), userId: ticket.getUserId(), userName})
+
+    // Create user
+    //const user = room.getUserModifier().makeUserModel(ticket.getUserId(), userName)
 
     // Register session
-    const session = new Session(client, room, user);
+    const session = new Session(client, room, ticket.getUserId());
     this.sessionService.register(session);
 
     // Add user to the room
-    room.getUserModifier().addUser(user);
+    //room.getUserModifier().addUser(user);
 
     console.log('WebSocket connected');
   }

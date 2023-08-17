@@ -14,25 +14,18 @@ export class Ticket {
      */
     private readonly ticketId: string;
   
-    /**
-     * The room that this ticket allows a user to join.
-     */
-    private readonly room: Room;
-  
-    /**
-     * The user that will join the room when this ticket is redeemed.
-     */
-    private readonly user: UserModel;
+    private readonly roomId: string;
+
+    private readonly userId: string;
   
     /**
      * The time until this ticket is valid.
      */
     private readonly validUntil: Date;
   
-    constructor(ticketId: string, room: Room, user: UserModel, validUntil: Date) {
+    constructor(ticketId: string, roomId: string, userId: string, validUntil: Date) {
       this.ticketId = ticketId;
-      this.room = room;
-      this.user = user;
+      this.roomId = roomId;
       this.validUntil = validUntil;
     }
   
@@ -40,15 +33,15 @@ export class Ticket {
       return this.ticketId;
     }
 
-    getRoom(): Room {
-      return this.room;
-    }
-  
-    getUser(): UserModel {
-      return this.user;
+    getRoomId(): string {
+      return this.roomId;
     }
 
     getValidUntil(): Date {
       return this.validUntil;
+    }
+
+    getUserId(): string {
+      return this.userId;
     }
   }

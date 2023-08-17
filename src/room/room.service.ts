@@ -1,22 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { RoomFactoryService } from 'src/factory/room-factory/room-factory.service';
-import { IdGenerationService } from 'src/id-generation/id-generation.service';
 import { Room } from 'src/model/room-model';
 
 @Injectable()
 export class RoomService {
 
-    constructor(private readonly idGenerationService: IdGenerationService, private readonly roomFactoryService: RoomFactoryService) {
+    constructor(private readonly roomFactoryService: RoomFactoryService) {
         this.rooms = new Map();
     }
 
     private rooms: Map<string,Room>;
 
-    createRoom(): Room {
-        const roomId = this.idGenerationService.nextId();
+    createRoom(roomId: string): Room {
         const roomName = "Room " + roomId;
         const room = this.roomFactoryService.makeRoom(roomId, roomName);
         this.rooms.set(roomId, room);
+        console.log('Created room ', roomId);
         return room;
     }
 
@@ -31,8 +30,8 @@ export class RoomService {
         return this.rooms.get(roomId);
     }
 
-    roomExists(room: Room): boolean {
-        return this.rooms.has(room.getRoomId())
+    roomExists(roomId: string): boolean {
+        return this.rooms.has(roomId)
     }
 
     getRooms(): Room[] {

@@ -5,9 +5,9 @@ import { UserModifier } from 'src/modifier/user-modifier';
 @Injectable()
 export class UserModifierFactoryService {
 
-    constructor(private readonly idGenerationService: IdGenerationService) {}
+    constructor() {}
 
     makeUserModifier(): UserModifier {
-        return new UserModifier(this.idGenerationService);
+        return new UserModifier();
     }
 }

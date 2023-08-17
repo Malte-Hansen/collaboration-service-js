@@ -8,10 +8,13 @@ import { InitialRoomPayload } from './payload/receivable/initial-room';
 import { RoomCreatedResponse } from './payload/sendable/room-created';
 import { JoinLobbyPayload } from './payload/receivable/join-lobby';
 import { LobbyJoinedResponse } from './payload/sendable/lobby-joined';
+import { PubsubService } from './pubsub/pubsub.service';
+import { IdGenerationService } from './id-generation/id-generation.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService, private readonly roomService: RoomService, private readonly ticketService: TicketService) {}
+  constructor(private readonly appService: AppService, private readonly roomService: RoomService, private readonly ticketService: TicketService,
+    private readonly pubsubService: PubsubService, private readonly idGenerationService: IdGenerationService) {}
 
   /**
    * Gets the IDs of all rooms.
@@ -33,13 +36,20 @@ export class AppController {
    * @return The ID of the newly created room.
    */
   @Post("/room")
-  addRoom(@Body() body: InitialRoomPayload): RoomCreatedResponse {
+  async addRoom(@Body() body: InitialRoomPayload): Promise<RoomCreatedResponse> {
+
+    const roomId = await this.idGenerationService.nextId();
     
-    const room = this.roomService.createRoom();
+    //const room = this.roomService.createRoom();
 
-    room.getExampleModifier().updateExample(body.example.value);
+    //room.getExampleModifier().updateExample(body.example.value);
 
-    const roomCreatedResponse: RoomCreatedResponse = {roomId: room.getRoomId()};
+    this.pubsubService.publishCreateRoom({
+      roomId: roomId,
+      initialRoom: body
+    });
+
+    const roomCreatedResponse: RoomCreatedResponse = {roomId: roomId};
 
     return roomCreatedResponse;
   }
@@ -50,20 +60,29 @@ export class AppController {
    * @param roomId The ID of the room whose lobby to add the new user to.
    * @return A ticket ID that can be used to establish a websocket connection.
    */
-  @Post("/room/:room-id/lobby")
-  joinLobby(@Param('roomId') roomId: string, @Body() body: JoinLobbyPayload): LobbyJoinedResponse {
-    console.log("got joinLobby");
+  @Post("/room/:roomId/lobby")
+  async joinLobby(@Param('roomId') roomId: string, @Body() body: JoinLobbyPayload): Promise<LobbyJoinedResponse> {
     const room = this.roomService.lookupRoom(roomId);
 
     // Initialize user model.
-    const userModel = room.getUserModifier().makeUserModel(body.userName);
+    //const userModel = room.getUserModifier().makeUserModel(body.userName);
     // TODO set missing properties
 
-    const ticket = this.ticketService.drawTicket(room, userModel);
-    console.log(ticket.getTicketId());
+    const userId = await this.idGenerationService.nextId();
+
+
+    const ticket = this.ticketService.drawTicket(roomId, userId);
+
+    // Add ticket
+    this.pubsubService.publishRegisterTicket({
+      ticketId: ticket.getTicketId(),
+      roomId: ticket.getRoomId(),
+      userId: userId,
+      validUntil: ticket.getValidUntil().getTime()
+    });
     
     const lobbyJoinedResponse: LobbyJoinedResponse = 
-      { ticketId: ticket.getTicketId(), validUntil: ticket.getValidUntil().getMilliseconds()};
+      { ticketId: ticket.getTicketId(), validUntil: ticket.getValidUntil().getTime()};
     
       return lobbyJoinedResponse;
   }
