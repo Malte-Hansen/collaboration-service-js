@@ -64,25 +64,12 @@ export class AppController {
   async joinLobby(@Param('roomId') roomId: string, @Body() body: JoinLobbyPayload): Promise<LobbyJoinedResponse> {
     const room = this.roomService.lookupRoom(roomId);
 
-    // Initialize user model.
-    //const userModel = room.getUserModifier().makeUserModel(body.userName);
     // TODO set missing properties
 
-    const userId = await this.idGenerationService.nextId();
-
-
-    const ticket = this.ticketService.drawTicket(roomId, userId);
-
-    // Add ticket
-    this.pubsubService.publishRegisterTicketEvent({
-      ticketId: ticket.getTicketId(),
-      roomId: ticket.getRoomId(),
-      userId: userId,
-      validUntil: ticket.getValidUntil().getTime()
-    });
+    const ticket = await this.ticketService.drawTicket(roomId);
     
     const lobbyJoinedResponse: LobbyJoinedResponse = 
-      { ticketId: ticket.getTicketId(), validUntil: ticket.getValidUntil().getTime()};
+      { ticketId: ticket.ticketId, validUntil: ticket.validUntil};
     
       return lobbyJoinedResponse;
   }

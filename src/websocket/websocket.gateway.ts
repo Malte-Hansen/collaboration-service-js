@@ -14,14 +14,14 @@ import { Session } from 'src/util/session';
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(@Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService,
-    private readonly ticketService: TicketService,
+    @Inject(forwardRef(() => TicketService)) private readonly ticketService: TicketService,
     private readonly sessionService: SessionService,
     private readonly roomService: RoomService) { }
 
   @WebSocketServer()
   server: Server;
 
-  handleConnection(client: Socket) {
+  async handleConnection(client: Socket) {
 
     // Query params
     const ticketId: string = (client.handshake.query.ticketId as string);
@@ -29,17 +29,14 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     // TODO query params for user position ? 
 
     // Redeem ticket
-    const ticket = this.ticketService.redeemTicket(ticketId);
-    const room = this.roomService.lookupRoom(ticket.getRoomId());
-
-    // Remove ticket
-    this.pubsubService.publishUnregisterTicketEvent({ ticketId });
+    const ticket = await this.ticketService.redeemTicket(ticketId);
+    const room = this.roomService.lookupRoom(ticket.roomId);
 
     // Join user
-    this.pubsubService.publishJoinUserEvent({ roomId: room.getRoomId(), userId: ticket.getUserId(), userName })
+    this.pubsubService.publishJoinUserEvent({ roomId: room.getRoomId(), userId: ticket.userId, userName })
 
     // Register session
-    const session = new Session(client, room, ticket.getUserId());
+    const session = new Session(client, room, ticket.userId);
     this.sessionService.register(session);
 
     // Add socket to IO Room
@@ -50,7 +47,17 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   handleDisconnect(client: Socket) {
     const session = this.sessionService.lookupSession(client);
+    const room = session.getRoom();
     this.sessionService.unregister(session);
+
+    // User leaves room
+    room.getUserModifier().removeUser(session.getUserId());
+
+    // Delete room if empty
+    if (room.getUserModifier().getUsers().length == 0) {
+      this.roomService.deleteRoom(room.getRoomId());
+    }
+    
     console.log('WebSocket disconnected');
   }
 

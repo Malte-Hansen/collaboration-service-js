@@ -1,7 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { IdGenerationService } from 'src/id-generation/id-generation.service';
 import { Room } from 'src/model/room-model';
 import { UserModel } from 'src/model/user-model';
+import { PubsubService } from 'src/pubsub/pubsub.service';
 import { RoomService } from 'src/room/room.service';
 import { Ticket } from 'src/util/ticket';
 import { v4 as uuidv4 } from 'uuid';
@@ -16,9 +17,7 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class TicketService {
 
-    constructor(private readonly roomService: RoomService) {
-        this.tickets = new Map();
-    }
+    constructor(private readonly roomService: RoomService, @Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService, private readonly idGenerationService: IdGenerationService) {}
 
   /**
    * Time for how long a ticket is valid.
@@ -28,48 +27,36 @@ export class TicketService {
    */
     private readonly TICKET_EXPIRY_PERIOD_IN_SECONDS = 30; 
 
-  /**
-   * The tickets that have not yet been redeemed.
-   */
-    private tickets: Map<string,Ticket>;
 
-    registerTicket(ticket: Ticket) {
-        this.tickets.set(ticket.getTicketId(), ticket);
-    }
-
-    unregisterTicket(ticketId: string) {
-        this.tickets.delete(ticketId);
-    }
-
-    drawTicket(roomId: string, userId: string): Ticket {
+    async drawTicket(roomId: string): Promise<Ticket> {
         const ticketId = uuidv4();
+        const userId = await this.idGenerationService.nextId();
         var validUntil = new Date();
         validUntil.setSeconds(validUntil.getSeconds() + this.TICKET_EXPIRY_PERIOD_IN_SECONDS);
-        const ticket = new Ticket(ticketId, roomId, userId, validUntil);
+        const ticket: Ticket = {ticketId, roomId, userId, validUntil: validUntil.getTime()}
+        this.pubsubService.storeTicket(ticket);
         return ticket;
     }
 
-    redeemTicket(ticketId: string): Ticket {
-        // Ensure that the ticket exists.
-        if (!this.tickets.has(ticketId)) {
-            throw new Error("Invalid ticket: " + ticketId);
-        }
+    async redeemTicket(ticketId: string): Promise<Ticket> {
 
-        // Get and remove the ticket.
-        const ticket = this.tickets.get(ticketId);
-        //this.tickets.delete(ticketId);
+        const ticket = await this.pubsubService.getTicket(ticketId);
+
+        if (!ticket) {
+            throw new Error("Ticket with id " + ticketId + " does not exist")
+          }
 
         // Ensure that the room still exists.
-        const roomId = ticket.getRoomId();
+        const roomId = ticket.roomId;
         if (!this.roomService.roomExists(roomId)) {
-            throw new Error("Room " + roomId + " for ticket " + ticketId + " has been closed");
+            throw new Error("Room " + roomId + " for ticket " + ticket.ticketId + " has been closed");
         }
 
         // Test whether the ticket is still valid.
-        const expiryDate = ticket.getValidUntil();
-        if (new Date() > expiryDate) {
+        const expiryDate = ticket.validUntil;
+        if (new Date().getTime() > expiryDate) {
 
-            throw new Error("Ticket " + ticketId + " expired at " + expiryDate.toDateString())
+            throw new Error("Ticket " + ticket.ticketId + " expired at " + new Date(expiryDate).toDateString())
         }
 
         return ticket;

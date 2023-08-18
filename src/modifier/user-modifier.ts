@@ -20,18 +20,18 @@ export class UserModifier {
     // TODO user connected event
   }
 
-  removeUser(user: UserModel): void {
+  removeUser(userId: string): void {
     // TODO unassign color
     // TODO release grabbed
 
-    if (this.users.has(user.getId())) {
-      this.users.delete(user.getId());
+    if (this.users.has(userId)) {
+      this.users.delete(userId);
       // TODO user disconneced event
     }
   }
 
-  getUsers(): IterableIterator<UserModel> {
-    return this.users.values();
+  getUsers(): UserModel[] {
+    return Array.from(this.users.values());
   }
 
   // TODO some properties are missing

@@ -7,8 +7,6 @@ import { Ticket } from 'src/util/ticket';
 import { TicketService } from 'src/ticket/ticket.service';
 import { CREATE_ROOM_EVENT, CreateRoomMessage } from 'src/message/pubsub/create-room-message';
 import { RoomService } from 'src/room/room.service';
-import { REGISTER_TICKET_EVENT, RegisterTicketMessage } from 'src/message/pubsub/register-ticket-message';
-import { UNREGISTER_TICKET_EVENT, UnregisterTicketMessage } from 'src/message/pubsub/unregister-ticket-message';
 import { JOIN_USER_EVENT, JoinUserMessage } from 'src/message/pubsub/join-user-message';
 import { ForwardedPubsubMessage } from 'src/message/pubsub/forward-pubsub-message';
 
@@ -17,19 +15,18 @@ const UNIQUE_ID_KEY = 'unique_id';
 @Injectable()
 export class PubsubService {
 
+  private readonly cacheClient: Redis;
   private readonly publisher: Redis;
   private readonly subscriber: Redis;
 
-  constructor(private readonly redisService: RedisService, private readonly roomService: RoomService, @Inject(forwardRef(() => WebsocketGateway)) private readonly websocketGateway: WebsocketGateway,
-    private readonly ticketService: TicketService) {
+  constructor(private readonly redisService: RedisService, private readonly roomService: RoomService, @Inject(forwardRef(() => WebsocketGateway)) private readonly websocketGateway: WebsocketGateway) {
 
     this.publisher = this.redisService.getClient();
     this.subscriber = this.publisher.duplicate();
+    this.cacheClient = this.publisher.duplicate();
 
     // Register event listener
     const listener : Map<string,(...args: any) => void> = new Map();
-    listener.set(REGISTER_TICKET_EVENT,this.handleRegisterTicketEvent.bind(this));
-    listener.set(UNREGISTER_TICKET_EVENT,this.handleUnregisterTicketEvent.bind(this));
     listener.set(CREATE_ROOM_EVENT,this.handleCreateRoomEvent.bind(this));
     listener.set(JOIN_USER_EVENT,this.handleJoinUserEvent.bind(this));
     listener.set(EXAMPLE_EVENT, (msg: any) => this.handleExampleEvent(EXAMPLE_EVENT, msg))
@@ -49,6 +46,12 @@ export class PubsubService {
     });
   }
 
+  /// UTIL
+
+  private getTicketKey(ticketId: string): string {
+    return 'ticket-' + ticketId;
+  }
+
   private publish(channel: string, message: any) {
     this.publisher.publish(channel, JSON.stringify(message));
   }
@@ -56,12 +59,21 @@ export class PubsubService {
   /// KEY VALUE STORAGE
 
   async getUniqueId(): Promise<number> {
-    const keyExists = await this.publisher.exists(UNIQUE_ID_KEY);
+    const keyExists = await this.cacheClient.exists(UNIQUE_ID_KEY);
     if (keyExists == 0) {
-      this.publisher.set(UNIQUE_ID_KEY, 0);
+      this.cacheClient.set(UNIQUE_ID_KEY, 0);
     }
-    const nextUniqueKey = this.publisher.incr(UNIQUE_ID_KEY);
+    const nextUniqueKey = this.cacheClient.incr(UNIQUE_ID_KEY);
     return nextUniqueKey;
+  }
+
+  async storeTicket(ticket: Ticket): Promise<void> {
+    await this.cacheClient.set(this.getTicketKey(ticket.ticketId), JSON.stringify(ticket));
+  }
+
+  async getTicket(ticketId: string): Promise<Ticket|null> {
+    const ticket = await this.cacheClient.get(this.getTicketKey(ticketId));
+    return ticket ? JSON.parse(ticket) : null;
   }
 
 
@@ -69,14 +81,6 @@ export class PubsubService {
 
   publishCreateRoomEvent(message: CreateRoomMessage) {
     this.publish(CREATE_ROOM_EVENT, message);
-  }
-
-  publishRegisterTicketEvent(message: RegisterTicketMessage) {
-    this.publish(REGISTER_TICKET_EVENT, message);
-  }
-
-  publishUnregisterTicketEvent(message: UnregisterTicketMessage) {
-    this.publish(UNREGISTER_TICKET_EVENT, message);
   }
 
   publishJoinUserEvent(message: JoinUserMessage) {
@@ -89,17 +93,6 @@ export class PubsubService {
 
 
   // SUBSCRIPTION HANDLERS
-
-  private handleRegisterTicketEvent(message: RegisterTicketMessage) {
-    this.ticketService.registerTicket(
-      new Ticket(message.ticketId, message.roomId,
-        message.userId, new Date(message.validUntil)));
-  }
-
-
-  private handleUnregisterTicketEvent(message: UnregisterTicketMessage) {
-    this.ticketService.unregisterTicket(message.ticketId);
-  }
 
   private handleCreateRoomEvent(message: CreateRoomMessage) {
     const room = this.roomService.createRoom(message.roomId);
