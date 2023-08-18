@@ -23,7 +23,7 @@ import { SessionService } from './session/session.service';
     })
 ],
   controllers: [AppController],
-  providers: [AppService, RoomService, WebsocketGateway, PubsubService, IdGenerationService, RoomFactoryService, ExampleModifierFactoryService, UserModifierFactoryService, TicketService, SessionService],
+  providers: [AppService, RoomFactoryService, ExampleModifierFactoryService, UserModifierFactoryService, RoomService, WebsocketGateway, PubsubService, IdGenerationService, TicketService, SessionService],
   exports: []
 })
 export class AppModule {}

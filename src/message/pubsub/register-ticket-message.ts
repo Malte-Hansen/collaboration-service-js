@@ -1,4 +1,4 @@
-export const REGISTER_TICKET_CHANNEL = 'register-ticket';
+export const REGISTER_TICKET_EVENT = 'register-ticket';
 
 export type RegisterTicketMessage = {
     ticketId: string

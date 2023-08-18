@@ -1,19 +1,18 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { ExampleMessage } from 'src/message/client/receivable/example-message';
+import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/client/receivable/example-message';
 import { RedisService } from '@liaoliaots/nestjs-redis';
 import { WebsocketGateway } from 'src/websocket/websocket.gateway';
 import { Ticket } from 'src/util/ticket';
 import { TicketService } from 'src/ticket/ticket.service';
-import { CREATE_ROOM_CHANNEL, CreateRoomMessage } from 'src/message/pubsub/create-room-message';
+import { CREATE_ROOM_EVENT, CreateRoomMessage } from 'src/message/pubsub/create-room-message';
 import { RoomService } from 'src/room/room.service';
-import { REGISTER_TICKET_CHANNEL, RegisterTicketMessage } from 'src/message/pubsub/register-ticket-message';
-import { UNREGISTER_TICKET_CHANNEL, UnregisterTicketMessage } from 'src/message/pubsub/unregister-ticket-message';
-import { JOIN_USER_CHANNEL, JoinUserMessage } from 'src/message/pubsub/join-user-message';
+import { REGISTER_TICKET_EVENT, RegisterTicketMessage } from 'src/message/pubsub/register-ticket-message';
+import { UNREGISTER_TICKET_EVENT, UnregisterTicketMessage } from 'src/message/pubsub/unregister-ticket-message';
+import { JOIN_USER_EVENT, JoinUserMessage } from 'src/message/pubsub/join-user-message';
+import { ForwardedPubsubMessage } from 'src/message/pubsub/forward-pubsub-message';
 
 const UNIQUE_ID_KEY = 'unique_id';
-
-export const FORWARD_EXAMPLE_CHANNEL = 'forward:example';
 
 @Injectable()
 export class PubsubService {
@@ -21,18 +20,19 @@ export class PubsubService {
   private readonly publisher: Redis;
   private readonly subscriber: Redis;
 
-  constructor(private readonly redisService: RedisService, @Inject(forwardRef(() => WebsocketGateway)) private readonly websocketGateway: WebsocketGateway,
-    private readonly ticketService: TicketService, private readonly roomService: RoomService) {
+  constructor(private readonly redisService: RedisService, private readonly roomService: RoomService, @Inject(forwardRef(() => WebsocketGateway)) private readonly websocketGateway: WebsocketGateway,
+    private readonly ticketService: TicketService) {
 
     this.publisher = this.redisService.getClient();
     this.subscriber = this.publisher.duplicate();
 
-    // Register handlers
-    const listener : Map<string,(message: any) => void> = new Map();
-    listener.set(REGISTER_TICKET_CHANNEL,this.handleRegisterTicketChannel);
-    listener.set(UNREGISTER_TICKET_CHANNEL,this.handleUnregisterTicketChannel);
-    listener.set(CREATE_ROOM_CHANNEL,this.handleCreateRoomChannel);
-    listener.set(JOIN_USER_CHANNEL,this.handleJoinUserChannel);
+    // Register event listener
+    const listener : Map<string,(...args: any) => void> = new Map();
+    listener.set(REGISTER_TICKET_EVENT,this.handleRegisterTicketEvent.bind(this));
+    listener.set(UNREGISTER_TICKET_EVENT,this.handleUnregisterTicketEvent.bind(this));
+    listener.set(CREATE_ROOM_EVENT,this.handleCreateRoomEvent.bind(this));
+    listener.set(JOIN_USER_EVENT,this.handleJoinUserEvent.bind(this));
+    listener.set(EXAMPLE_EVENT, (msg: any) => this.handleExampleEvent(EXAMPLE_EVENT, msg))
 
 
     // Subscribe channels
@@ -65,56 +65,64 @@ export class PubsubService {
   }
 
 
-  /// PUBLISH MESSAGE
+  /// PUBLISH EVENT
 
-  publishCreateRoom(createRoomMessage: CreateRoomMessage) {
-    this.publish(CREATE_ROOM_CHANNEL, createRoomMessage);
+  publishCreateRoomEvent(message: CreateRoomMessage) {
+    this.publish(CREATE_ROOM_EVENT, message);
   }
 
-  publishRegisterTicket(registerTicketMessage: RegisterTicketMessage) {
-    this.publish(REGISTER_TICKET_CHANNEL, registerTicketMessage);
+  publishRegisterTicketEvent(message: RegisterTicketMessage) {
+    this.publish(REGISTER_TICKET_EVENT, message);
   }
 
-  publishUnregisterTicket(unregisterTicketMessage: UnregisterTicketMessage) {
-    this.publish(UNREGISTER_TICKET_CHANNEL, unregisterTicketMessage);
+  publishUnregisterTicketEvent(message: UnregisterTicketMessage) {
+    this.publish(UNREGISTER_TICKET_EVENT, message);
   }
 
-  publishJoinUserMessage(joinUserMessage: JoinUserMessage) {
-    this.publish(JOIN_USER_CHANNEL, joinUserMessage);
+  publishJoinUserEvent(message: JoinUserMessage) {
+    this.publish(JOIN_USER_EVENT, message);
   }
 
-  publishForwardedMessage(message: ExampleMessage): void {
-    this.publish('forward', message);
+  publishForwardedMessage(event: string, message: ForwardedPubsubMessage<any>): void {
+    this.publish(event, message);
   }
 
 
   // SUBSCRIPTION HANDLERS
 
-  private handleRegisterTicketChannel(registerTicketMessage: RegisterTicketMessage) {
+  private handleRegisterTicketEvent(message: RegisterTicketMessage) {
     this.ticketService.registerTicket(
-      new Ticket(registerTicketMessage.ticketId, registerTicketMessage.roomId,
-        registerTicketMessage.userId, new Date(registerTicketMessage.validUntil)));
+      new Ticket(message.ticketId, message.roomId,
+        message.userId, new Date(message.validUntil)));
   }
 
 
-  private handleUnregisterTicketChannel(unregisterTicketMessage: UnregisterTicketMessage) {
-    this.ticketService.unregisterTicket(unregisterTicketMessage.ticketId);
+  private handleUnregisterTicketEvent(message: UnregisterTicketMessage) {
+    this.ticketService.unregisterTicket(message.ticketId);
   }
 
-  private handleCreateRoomChannel(createRoomMessage: CreateRoomMessage) {
-    const room = this.roomService.createRoom(createRoomMessage.roomId);
-    room.getExampleModifier().updateExample(createRoomMessage.initialRoom.example.value);
+  private handleCreateRoomEvent(message: CreateRoomMessage) {
+    const room = this.roomService.createRoom(message.roomId);
+    room.getExampleModifier().updateExample(message.initialRoom.example.value);
     // TODO init model 
   }
 
-  private handleJoinUserChannel(joinUserMessage: JoinUserMessage) {
-    const room = this.roomService.lookupRoom(joinUserMessage.roomId);
+  private handleJoinUserEvent(message: JoinUserMessage) {
+    const room = this.roomService.lookupRoom(message.roomId);
 
     // Create user
-    const user = room.getUserModifier().makeUserModel(joinUserMessage.userId, joinUserMessage.userName);
+    const user = room.getUserModifier().makeUserModel(message.userId, message.userName);
 
     // Add user to room
     room.getUserModifier().addUser(user);
+  }
+
+  private handleExampleEvent(event: string, message: ForwardedPubsubMessage<ExampleMessage>) {
+    const room = this.roomService.lookupRoom(message.roomId);
+
+    room.getExampleModifier().updateExample(message.message.value);
+
+    this.websocketGateway.broadcastForwardMessage(event, message.roomId, {userId: message.userId, message: message.message});
   }
 
 }

@@ -1,4 +1,4 @@
-export const UNREGISTER_TICKET_CHANNEL = 'unregister-ticket';
+export const UNREGISTER_TICKET_EVENT = 'unregister-ticket';
 
 export type UnregisterTicketMessage = {
     ticketId: string

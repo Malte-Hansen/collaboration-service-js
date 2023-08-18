@@ -1,8 +1,9 @@
 import { Inject, forwardRef } from '@nestjs/common';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ExampleMessage } from 'src/message/client/receivable/example-message';
-import { ForwardClientMessage } from 'src/message/client/sendable/forward-client-message';
+import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/client/receivable/example-message';
+import { ForwardedMessage } from 'src/message/client/sendable/forwarded-message';
+import { ForwardedPubsubMessage } from 'src/message/pubsub/forward-pubsub-message';
 import { PubsubService } from 'src/pubsub/pubsub.service';
 import { RoomService } from 'src/room/room.service';
 import { SessionService } from 'src/session/session.service';
@@ -32,10 +33,10 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     const room = this.roomService.lookupRoom(ticket.getRoomId());
 
     // Remove ticket
-    this.pubsubService.publishUnregisterTicket({ ticketId });
+    this.pubsubService.publishUnregisterTicketEvent({ ticketId });
 
     // Join user
-    this.pubsubService.publishJoinUserMessage({ roomId: room.getRoomId(), userId: ticket.getUserId(), userName })
+    this.pubsubService.publishJoinUserEvent({ roomId: room.getRoomId(), userId: ticket.getUserId(), userName })
 
     // Register session
     const session = new Session(client, room, ticket.getUserId());
@@ -53,7 +54,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     console.log('WebSocket disconnected');
   }
 
-  broadcastForwardMessage(event: string, roomId: string, message: ForwardClientMessage<any>): void {
+  broadcastForwardMessage(event: string, roomId: string, message: ForwardedMessage<any>): void {
     const client = this.sessionService.lookupSocket(message.userId);
     if (client) {
       // Exclude sender of the message if it is connected to the server
@@ -64,10 +65,11 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
   }
 
-  @SubscribeMessage('example')
+  @SubscribeMessage(EXAMPLE_EVENT)
   handleMessage(@MessageBody() message: ExampleMessage, @ConnectedSocket() client: Socket): void {
     const session = this.sessionService.lookupSession(client);
-    this.pubsubService.publishForwardedMessage(message);
+    const forwardMessage: ForwardedPubsubMessage<ExampleMessage> = { roomId: session.getRoom().getRoomId(), userId: session.getUserId(), message};
+    this.pubsubService.publishForwardedMessage(EXAMPLE_EVENT, forwardMessage);
   }
 
 }

@@ -44,7 +44,7 @@ export class AppController {
 
     //room.getExampleModifier().updateExample(body.example.value);
 
-    this.pubsubService.publishCreateRoom({
+    this.pubsubService.publishCreateRoomEvent({
       roomId: roomId,
       initialRoom: body
     });
@@ -74,7 +74,7 @@ export class AppController {
     const ticket = this.ticketService.drawTicket(roomId, userId);
 
     // Add ticket
-    this.pubsubService.publishRegisterTicket({
+    this.pubsubService.publishRegisterTicketEvent({
       ticketId: ticket.getTicketId(),
       roomId: ticket.getRoomId(),
       userId: userId,

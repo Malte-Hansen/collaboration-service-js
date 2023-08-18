@@ -1,4 +1,4 @@
-export const JOIN_USER_CHANNEL = 'join-user';
+export const JOIN_USER_EVENT = 'join-user';
 
 export type JoinUserMessage = {
     roomId: string,
