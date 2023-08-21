@@ -24,9 +24,6 @@ export class RoomService {
     }
 
     lookupRoom(roomId: string): Room {
-        if (!this.rooms.has(roomId)) {
-            throw new Error("Room not found: " + roomId)
-        }
         return this.rooms.get(roomId);
     }
 

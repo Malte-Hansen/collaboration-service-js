@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, HttpStatus, HttpException } from '@nestjs/common';
 import { AppService } from './app.service';
 import { RoomService } from './room/room.service';
 import { TicketService } from './ticket/ticket.service';
@@ -14,7 +14,7 @@ import { IdGenerationService } from './id-generation/id-generation.service';
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService, private readonly roomService: RoomService, private readonly ticketService: TicketService,
-    private readonly pubsubService: PubsubService, private readonly idGenerationService: IdGenerationService) {}
+    private readonly pubsubService: PubsubService, private readonly idGenerationService: IdGenerationService) { }
 
   /**
    * Gets the IDs of all rooms.
@@ -39,7 +39,7 @@ export class AppController {
   async addRoom(@Body() body: InitialRoomPayload): Promise<RoomCreatedResponse> {
 
     const roomId = await this.idGenerationService.nextId();
-    
+
     //const room = this.roomService.createRoom();
 
     //room.getExampleModifier().updateExample(body.example.value);
@@ -49,7 +49,7 @@ export class AppController {
       initialRoom: body
     });
 
-    const roomCreatedResponse: RoomCreatedResponse = {roomId: roomId};
+    const roomCreatedResponse: RoomCreatedResponse = { roomId: roomId };
 
     return roomCreatedResponse;
   }
@@ -62,15 +62,18 @@ export class AppController {
    */
   @Post("/room/:roomId/lobby")
   async joinLobby(@Param('roomId') roomId: string, @Body() body: JoinLobbyPayload): Promise<LobbyJoinedResponse> {
-    const room = this.roomService.lookupRoom(roomId);
+    
+    if (!this.roomService.lookupRoom(roomId)) {
+      throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
+    }
 
     // TODO set missing properties
 
     const ticket = await this.ticketService.drawTicket(roomId);
-    
-    const lobbyJoinedResponse: LobbyJoinedResponse = 
-      { ticketId: ticket.ticketId, validUntil: ticket.validUntil};
-    
-      return lobbyJoinedResponse;
+
+    const lobbyJoinedResponse: LobbyJoinedResponse =
+      { ticketId: ticket.ticketId, validUntil: ticket.validUntil };
+
+    return lobbyJoinedResponse;
   }
 }

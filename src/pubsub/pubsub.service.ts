@@ -4,7 +4,6 @@ import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/client/receivable/exa
 import { RedisService } from '@liaoliaots/nestjs-redis';
 import { WebsocketGateway } from 'src/websocket/websocket.gateway';
 import { Ticket } from 'src/util/ticket';
-import { TicketService } from 'src/ticket/ticket.service';
 import { CREATE_ROOM_EVENT, CreateRoomMessage } from 'src/message/pubsub/create-room-message';
 import { RoomService } from 'src/room/room.service';
 import { JOIN_USER_EVENT, JoinUserMessage } from 'src/message/pubsub/join-user-message';

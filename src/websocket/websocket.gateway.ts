@@ -4,11 +4,13 @@ import { Server, Socket } from 'socket.io';
 import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/client/receivable/example-message';
 import { ForwardedMessage } from 'src/message/client/sendable/forwarded-message';
 import { ForwardedPubsubMessage } from 'src/message/pubsub/forward-pubsub-message';
+import { Room } from 'src/model/room-model';
 import { PubsubService } from 'src/pubsub/pubsub.service';
 import { RoomService } from 'src/room/room.service';
 import { SessionService } from 'src/session/session.service';
 import { TicketService } from 'src/ticket/ticket.service';
 import { Session } from 'src/util/session';
+import { Ticket } from 'src/util/ticket';
 
 @WebSocketGateway()
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -22,15 +24,25 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   server: Server;
 
   async handleConnection(client: Socket) {
+    console.log('WebSocket connected');
 
     // Query params
     const ticketId: string = (client.handshake.query.ticketId as string);
     const userName: string = (client.handshake.query.userName as string);
     // TODO query params for user position ? 
 
+    var ticket: Ticket;
+    var room: Room;
+    
     // Redeem ticket
-    const ticket = await this.ticketService.redeemTicket(ticketId);
-    const room = this.roomService.lookupRoom(ticket.roomId);
+    try {
+      ticket = await this.ticketService.redeemTicket(ticketId);
+      room = this.roomService.lookupRoom(ticket.roomId);
+    } catch (error) {
+      console.log(error);
+      client.disconnect();
+      return;
+    }
 
     // Join user
     this.pubsubService.publishJoinUserEvent({ roomId: room.getRoomId(), userId: ticket.userId, userName })
@@ -41,12 +53,17 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
     // Add socket to IO Room
     client.join(room.getRoomId());
-
-    console.log('WebSocket connected');
   }
 
   handleDisconnect(client: Socket) {
+    console.log('WebSocket disconnected');
+
     const session = this.sessionService.lookupSession(client);
+
+    if (!session) {
+      return;
+    }
+
     const room = session.getRoom();
     this.sessionService.unregister(session);
 
@@ -57,8 +74,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (room.getUserModifier().getUsers().length == 0) {
       this.roomService.deleteRoom(room.getRoomId());
     }
-    
-    console.log('WebSocket disconnected');
   }
 
   broadcastForwardMessage(event: string, roomId: string, message: ForwardedMessage<any>): void {
