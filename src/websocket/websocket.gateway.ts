@@ -1,7 +1,6 @@
 import { Inject, forwardRef } from '@nestjs/common';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ColorService } from 'src/color/color.service';
 import { MessageFactoryService } from 'src/factory/message-factory/message-factory.service';
 import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/client/receivable/example-message';
 import { ForwardedMessage } from 'src/message/client/sendable/forwarded-message';
@@ -23,7 +22,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     @Inject(forwardRef(() => TicketService)) private readonly ticketService: TicketService,
     private readonly sessionService: SessionService,
     private readonly roomService: RoomService,
-    private readonly colorService: ColorService,
     private readonly messageFactoryService: MessageFactoryService) { }
 
   @WebSocketServer()
@@ -51,7 +49,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
 
     // Join user
-    const colorId = this.colorService.nextColorId();
+    const colorId = room.getColorModifier().nextColorId();
     const user = room.getUserModifier().makeUserModel(ticket.userId, userName, colorId);
     room.getUserModifier().addUser(user);
     this.pubsubService.publishJoinUserEvent({ roomId: room.getRoomId(), message: { userId: ticket.userId, userName, colorId }})

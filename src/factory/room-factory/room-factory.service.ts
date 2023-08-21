@@ -1,23 +1,39 @@
 import { Injectable } from '@nestjs/common';
 import { Room } from 'src/model/room-model';
-import { ExampleModifierFactoryService } from '../example-modifier-factory/example-modifier-factory.service';
-import { UserModifierFactoryService } from '../user-modifier-factory/user-modifier-factory.service';
+import { ApplicationModifier } from 'src/modifier/application-modifier';
+import { ColorModifier } from 'src/modifier/color-modifier';
+import { DetachedMenuModifier } from 'src/modifier/detached-menu-modifier';
+import { ExampleModifier } from 'src/modifier/example-modifier';
+import { GrabModifier } from 'src/modifier/grab-modifier';
+import { HeatmapModifier } from 'src/modifier/heatmap-modifier';
+import { LandscapeModifier } from 'src/modifier/landscape-modifier';
+import { UserModifier } from 'src/modifier/user-modifier';
 
 @Injectable()
 export class RoomFactoryService {
 
-    constructor(
-        private readonly exampleModifierFactoryService: ExampleModifierFactoryService,
-        private readonly userModifierFactoryService: UserModifierFactoryService) {}
+    constructor() {}
 
-    makeRoom(roomId: string, roomName: string): Room {
-        const exampleModifier = this.exampleModifierFactoryService.makeExampleModifier();
-        const userModifier = this.userModifierFactoryService.makeUserModifier();
+    makeRoom(roomId: string, roomName: string, landscapeId: string): Room {
+        const grabModifier = new GrabModifier();
+        const colorModifier = new ColorModifier();
+        const exampleModifier = new ExampleModifier()
+        const userModifier = new UserModifier(colorModifier);
+        const landscapeModifier = new LandscapeModifier(landscapeId, grabModifier);
+        const detachedMenuModifier = new DetachedMenuModifier(grabModifier);
+        const heatmapModifier = new HeatmapModifier();
+        const applicationModifier = new ApplicationModifier(grabModifier)
         
         return new Room(
             roomId, 
             roomName,
             exampleModifier,
-            userModifier)
+            userModifier,
+            applicationModifier,
+            landscapeModifier,
+            detachedMenuModifier,
+            heatmapModifier,
+            colorModifier,
+            grabModifier)
     }
 }

@@ -39,14 +39,13 @@ export class AppController {
   async addRoom(@Body() body: InitialRoomPayload): Promise<RoomCreatedResponse> {
 
     const roomId = await this.idGenerationService.nextId();
+    const landscapeId = await this.idGenerationService.nextId();
 
-    //const room = this.roomService.createRoom();
-
-    //room.getExampleModifier().updateExample(body.example.value);
-
+    // TODO publish landscape
     this.pubsubService.publishCreateRoomEvent({
-      roomId: roomId,
-      initialRoom: body
+      roomId,
+      initialRoom: body,
+      landscapeId
     });
 
     const roomCreatedResponse: RoomCreatedResponse = { roomId: roomId };

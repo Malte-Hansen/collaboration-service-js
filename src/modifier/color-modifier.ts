@@ -1,8 +1,6 @@
-import { Injectable } from '@nestjs/common';
-import { Color } from 'src/util/color';
+import { Color } from "src/util/color";
 
-@Injectable()
-export class ColorService {
+export class ColorModifier {
 
     private colors: Map<number,Color>;
 

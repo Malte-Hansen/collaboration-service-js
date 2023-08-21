@@ -11,6 +11,8 @@ import { ForwardedPubsubMessage } from 'src/message/pubsub/forward-pubsub-messag
 import { USER_DISCONNECTED_EVENT, UserDisconnectedMessage } from 'src/message/client/sendable/user-disconnected-message';
 import { RoomStatusMessage } from 'src/message/pubsub/room-status-message';
 import { UserModel } from 'src/model/user-model';
+import Redlock from "redlock";
+import { GrabbableObjectModel } from 'src/model/grabbable-object-model';
 
 const UNIQUE_ID_KEY = 'unique_id';
 
@@ -20,6 +22,7 @@ export class PubsubService {
   private readonly cacheClient: Redis;
   private readonly publisher: Redis;
   private readonly subscriber: Redis;
+  private readonly redlock: Redlock;
 
   constructor(private readonly redisService: RedisService, private readonly roomService: RoomService,
     @Inject(forwardRef(() => WebsocketGateway)) private readonly websocketGateway: WebsocketGateway) {
@@ -27,6 +30,9 @@ export class PubsubService {
     this.publisher = this.redisService.getClient();
     this.subscriber = this.publisher.duplicate();
     this.cacheClient = this.publisher.duplicate();
+    this.redlock = new Redlock([this.publisher.duplicate()], {
+      retryCount: 5, retryDelay: 100
+    });
 
     // Register event listener
     const listener: Map<string, (...args: any) => void> = new Map();
@@ -56,6 +62,10 @@ export class PubsubService {
     return 'ticket-' + ticketId;
   }
 
+  private getGrabbableObjectLock(grabId: string): string {
+    return 'grab-' + grabId;
+  }
+
   private publish(channel: string, message: any) {
     this.publisher.publish(channel, JSON.stringify(message));
   }
@@ -80,6 +90,20 @@ export class PubsubService {
     return ticket ? JSON.parse(ticket) : null;
   }
 
+  // LOCK
+
+  async lockGrabbableObject(grabbableObject: GrabbableObjectModel): Promise<any> {
+    try {
+      return await this.redlock.acquire([this.getGrabbableObjectLock(grabbableObject.getGrabId())], Number.MAX_SAFE_INTEGER);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async releaseGrabbableObjectLock(lock: any) {
+    await this.redlock.release(lock);
+  }
+
 
   /// PUBLISH EVENT
 
@@ -102,7 +126,7 @@ export class PubsubService {
   // SUBSCRIPTION HANDLERS
 
   private handleCreateRoomEvent(message: CreateRoomMessage) {
-    const room = this.roomService.createRoom(message.roomId);
+    const room = this.roomService.createRoom(message.roomId, message.landscapeId);
     room.getExampleModifier().updateExample(message.initialRoom.example.value);
     // TODO init model 
   }

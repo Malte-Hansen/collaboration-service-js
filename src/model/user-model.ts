@@ -76,7 +76,7 @@ export class UserModel extends BaseModel {
     this.hasHighlightedEntity = isHighlighted;
   }
 
-  setHighlightedEntity(isHighlighted: boolean, appId: string, entityType: string, entityId: string): void {
+  setHighlightedEntity(appId: string, entityType: string, entityId: string): void {
     this.highlightedEntity = new HighlightingModel(appId, entityId, entityType);
   }
 

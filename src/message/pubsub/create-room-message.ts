@@ -4,5 +4,6 @@ export const CREATE_ROOM_EVENT = 'create-room';
 
 export type CreateRoomMessage = {
     roomId: string;
-    initialRoom: InitialRoomPayload
+    initialRoom: InitialRoomPayload,
+    landscapeId: string
 }

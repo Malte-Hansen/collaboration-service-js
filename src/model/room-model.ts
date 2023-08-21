@@ -1,4 +1,10 @@
+import { ApplicationModifier } from "src/modifier/application-modifier";
+import { ColorModifier } from "src/modifier/color-modifier";
+import { DetachedMenuModifier } from "src/modifier/detached-menu-modifier";
 import { ExampleModifier } from "src/modifier/example-modifier";
+import { GrabModifier } from "src/modifier/grab-modifier";
+import { HeatmapModifier } from "src/modifier/heatmap-modifier";
+import { LandscapeModifier } from "src/modifier/landscape-modifier";
 import { UserModifier } from "src/modifier/user-modifier";
 
 /**
@@ -10,12 +16,26 @@ export class Room {
     
     private readonly exampleModifier: ExampleModifier;
     private readonly userModifier: UserModifier;
+    private readonly applicationModifier: ApplicationModifier;
+    private readonly landscapeModifier: LandscapeModifier;
+    private readonly detachedMenuModifier: DetachedMenuModifier;
+    private readonly heatmapModifier: HeatmapModifier;
+    private readonly colorModifier: ColorModifier;
+    private readonly grabModifier: GrabModifier;
   
-    constructor(roomId: string, roomName: string, exampleModifier: ExampleModifier, userModifier: UserModifier) {
+    constructor(roomId: string, roomName: string, exampleModifier: ExampleModifier, userModifier: UserModifier,
+      applicationModifier: ApplicationModifier, landscapeModifier: LandscapeModifier, detachedMenuModifier: DetachedMenuModifier,
+      heatmapModifier: HeatmapModifier, colorModifier: ColorModifier, grabModifier: GrabModifier) {
       this.roomId = roomId;
       this.roomName = roomName;
       this.exampleModifier = exampleModifier;
       this.userModifier = userModifier;
+      this.applicationModifier = applicationModifier;
+      this.landscapeModifier = landscapeModifier;
+      this.detachedMenuModifier = detachedMenuModifier;
+      this.heatmapModifier = heatmapModifier;
+      this.colorModifier = colorModifier;
+      this.grabModifier = grabModifier;
     }
   
     getRoomId(): string {
@@ -33,5 +53,28 @@ export class Room {
     getUserModifier(): UserModifier {
       return this.userModifier;
     }
+
+    getApplicationModifier(): ApplicationModifier {
+      return this.applicationModifier;
+    }
+
+    getLandscapeModeifier(): LandscapeModifier {
+      return this.landscapeModifier;
+    }
     
+    getDetachedMenuModifier(): DetachedMenuModifier {
+      return this.detachedMenuModifier;
+    }
+
+    getHeatmapModifier(): HeatmapModifier {
+      return this.heatmapModifier;
+    }
+
+    getColorModifier(): ColorModifier {
+      return this.colorModifier;
+    }
+
+    getGrabModifier(): GrabModifier {
+      return this.grabModifier;
+    }
   }

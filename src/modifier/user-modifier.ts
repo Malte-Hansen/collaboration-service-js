@@ -1,18 +1,18 @@
-import { ColorService } from "src/color/color.service";
 import { ControllerModel } from "src/model/controller-model";
 import { UserState, UserModel } from "src/model/user-model";
 import { Controller } from "src/util/controller";
 import { ControllerPose } from "src/util/controller";
 import { Pose } from "src/util/pose";
+import { ColorModifier } from "./color-modifier";
 
 export class UserModifier {
 
   private users: Map<string, UserModel> = new Map();
 
-  private readonly colorService: ColorService;
+  private readonly colorModifier: ColorModifier;
 
-  constructor(colorService: ColorService) {
-    this.colorService = colorService;
+  constructor(colorModifier: ColorModifier) {
+    this.colorModifier = colorModifier;
   }
 
   updateUserPose(user: UserModel, pose: Pose): void {
@@ -61,11 +61,11 @@ export class UserModifier {
         otherUser.setHighlighted(false);
       }
     }
-    user.setHighlightedEntity(isHighlighted, appId, entityType, entityId);
+    user.setHighlightedEntity(appId, entityType, entityId);
   }
 
   makeUserModel(userId: string, userName: string, colorId: number): UserModel {
-    const color = this.colorService.assignColor(colorId);
+    const color = this.colorModifier.assignColor(colorId);
     return new UserModel(userId, userName, color);
   }
 
@@ -83,7 +83,7 @@ export class UserModifier {
     
     if (!user) return;
 
-    this.colorService.unassignColor(user.getColor().colorId);
+    this.colorModifier.unassignColor(user.getColor().colorId);
     // TODO release grabbed
 
     this.users.delete(userId);

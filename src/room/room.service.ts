@@ -11,9 +11,9 @@ export class RoomService {
 
     private rooms: Map<string,Room>;
 
-    createRoom(roomId: string): Room {
+    createRoom(roomId: string, landscapeId: string): Room {
         const roomName = "Room " + roomId;
-        const room = this.roomFactoryService.makeRoom(roomId, roomName);
+        const room = this.roomFactoryService.makeRoom(roomId, roomName, landscapeId);
         this.rooms.set(roomId, room);
         console.log('Created room ', roomId);
         return room;
