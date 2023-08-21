@@ -8,6 +8,9 @@ import { CREATE_ROOM_EVENT, CreateRoomMessage } from 'src/message/pubsub/create-
 import { RoomService } from 'src/room/room.service';
 import { JOIN_USER_EVENT, JoinUserMessage } from 'src/message/pubsub/join-user-message';
 import { ForwardedPubsubMessage } from 'src/message/pubsub/forward-pubsub-message';
+import { USER_DISCONNECTED_EVENT, UserDisconnectedMessage } from 'src/message/client/sendable/user-disconnected-message';
+import { RoomStatusMessage } from 'src/message/pubsub/room-status-message';
+import { UserModel } from 'src/model/user-model';
 
 const UNIQUE_ID_KEY = 'unique_id';
 
@@ -18,17 +21,19 @@ export class PubsubService {
   private readonly publisher: Redis;
   private readonly subscriber: Redis;
 
-  constructor(private readonly redisService: RedisService, private readonly roomService: RoomService, @Inject(forwardRef(() => WebsocketGateway)) private readonly websocketGateway: WebsocketGateway) {
+  constructor(private readonly redisService: RedisService, private readonly roomService: RoomService,
+    @Inject(forwardRef(() => WebsocketGateway)) private readonly websocketGateway: WebsocketGateway) {
 
     this.publisher = this.redisService.getClient();
     this.subscriber = this.publisher.duplicate();
     this.cacheClient = this.publisher.duplicate();
 
     // Register event listener
-    const listener : Map<string,(...args: any) => void> = new Map();
-    listener.set(CREATE_ROOM_EVENT,this.handleCreateRoomEvent.bind(this));
-    listener.set(JOIN_USER_EVENT,this.handleJoinUserEvent.bind(this));
-    listener.set(EXAMPLE_EVENT, (msg: any) => this.handleExampleEvent(EXAMPLE_EVENT, msg))
+    const listener: Map<string, (...args: any) => void> = new Map();
+    listener.set(CREATE_ROOM_EVENT, this.handleCreateRoomEvent.bind(this));
+    listener.set(JOIN_USER_EVENT, this.handleJoinUserEvent.bind(this));
+    listener.set(USER_DISCONNECTED_EVENT, this.handleDisconnetedEvent.bind(this));
+    listener.set(EXAMPLE_EVENT, (msg: any) => this.handleExampleEvent(EXAMPLE_EVENT, msg));
 
 
     // Subscribe channels
@@ -70,7 +75,7 @@ export class PubsubService {
     await this.cacheClient.set(this.getTicketKey(ticket.ticketId), JSON.stringify(ticket));
   }
 
-  async getTicket(ticketId: string): Promise<Ticket|null> {
+  async getTicket(ticketId: string): Promise<Ticket | null> {
     const ticket = await this.cacheClient.get(this.getTicketKey(ticketId));
     return ticket ? JSON.parse(ticket) : null;
   }
@@ -82,14 +87,17 @@ export class PubsubService {
     this.publish(CREATE_ROOM_EVENT, message);
   }
 
-  publishJoinUserEvent(message: JoinUserMessage) {
+  publishJoinUserEvent(message: RoomStatusMessage<JoinUserMessage>) {
     this.publish(JOIN_USER_EVENT, message);
+  }
+
+  publishUserDisconnectedEvent(message: RoomStatusMessage<UserDisconnectedMessage>) {
+    this.publish(USER_DISCONNECTED_EVENT, message);
   }
 
   publishForwardedMessage(event: string, message: ForwardedPubsubMessage<any>): void {
     this.publish(event, message);
   }
-
 
   // SUBSCRIPTION HANDLERS
 
@@ -99,14 +107,42 @@ export class PubsubService {
     // TODO init model 
   }
 
-  private handleJoinUserEvent(message: JoinUserMessage) {
+  private handleJoinUserEvent(message: RoomStatusMessage<JoinUserMessage>) {
     const room = this.roomService.lookupRoom(message.roomId);
 
-    // Create user
-    const user = room.getUserModifier().makeUserModel(message.userId, message.userName);
+    var user: UserModel;
 
-    // Add user to room
-    room.getUserModifier().addUser(user);
+    // Done, if user was already added by this instance
+    if (!room.getUserModifier().hasUser(message.message.userId)) {
+      // Create user
+      user = room.getUserModifier().makeUserModel(message.message.userId, message.message.userName, message.message.colorId);
+
+      // Add user to room
+      room.getUserModifier().addUser(user);
+    } else {
+      user = room.getUserModifier().getUserById(message.message.userId);
+    }
+
+    // Inform other users
+    this.websocketGateway.sendUserConnectedMessage(room.getRoomId(), {
+      id: user.getId(),
+      name: user.getUserName(),
+      color: user.getColor(),
+      position: user.getPosition(),
+      quaternion: user.getQuaternion()
+    })
+  }
+
+  private handleDisconnetedEvent(message: RoomStatusMessage<UserDisconnectedMessage>) {
+    const room = this.roomService.lookupRoom(message.roomId);
+
+    // User leaves room
+    room.getUserModifier().removeUser(message.message.id);
+
+    // Delete room if empty
+    if (room.getUserModifier().getUsers().length == 0) {
+      this.roomService.deleteRoom(room.getRoomId());
+    }
   }
 
   private handleExampleEvent(event: string, message: ForwardedPubsubMessage<ExampleMessage>) {
@@ -114,7 +150,7 @@ export class PubsubService {
 
     room.getExampleModifier().updateExample(message.message.value);
 
-    this.websocketGateway.broadcastForwardMessage(event, message.roomId, {userId: message.userId, message: message.message});
+    this.websocketGateway.sendBroadcastForwardedMessage(event, message.roomId, { userId: message.userId, message: message.message });
   }
 
 }

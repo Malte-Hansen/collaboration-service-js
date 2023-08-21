@@ -15,12 +15,12 @@ export class SessionService {
 
     register(session: Session): void {
         this.sessions.set(session.getSocket(), session);
-        this.socketByUserId.set(session.getUserId(), session.getSocket());
+        this.socketByUserId.set(session.getUser().getId(), session.getSocket());
     }
 
     unregister(session: Session): void {
         this.sessions.delete(session.getSocket());
-        this.socketByUserId.delete(session.getUserId());
+        this.socketByUserId.delete(session.getUser().getId());
     }
 
     lookupSession(socket: Socket): Session {

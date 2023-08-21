@@ -1,4 +1,5 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { ColorService } from 'src/color/color.service';
 import { IdGenerationService } from 'src/id-generation/id-generation.service';
 import { Room } from 'src/model/room-model';
 import { UserModel } from 'src/model/user-model';
@@ -17,7 +18,10 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class TicketService {
 
-    constructor(private readonly roomService: RoomService, @Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService, private readonly idGenerationService: IdGenerationService) {}
+    constructor(private readonly roomService: RoomService, 
+        @Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService, 
+        private readonly idGenerationService: IdGenerationService,
+        private readonly colorService: ColorService) {}
 
   /**
    * Time for how long a ticket is valid.

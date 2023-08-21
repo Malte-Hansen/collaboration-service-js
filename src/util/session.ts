@@ -16,12 +16,12 @@ export class Session {
      */
     private readonly room: Room;
 
-    private readonly userId: string;
+    private readonly user: UserModel;
   
-    constructor(socket: Socket, room: Room, userId: string) {
+    constructor(socket: Socket, room: Room, user: UserModel) {
       this.socket = socket;
       this.room = room;
-      this.userId = userId;
+      this.user = user;
     }
   
     getSocket(): Socket {
@@ -32,8 +32,8 @@ export class Session {
       return this.room;
     }
   
-    getUserId(): string {
-      return this.userId;
+    getUser(): UserModel {
+      return this.user;
     }
 
     // TODO send method?

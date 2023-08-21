@@ -11,6 +11,8 @@ import { WebsocketGateway } from './websocket/websocket.gateway';
 import { PubsubService } from './pubsub/pubsub.service';
 import { TicketService } from './ticket/ticket.service';
 import { SessionService } from './session/session.service';
+import { ColorService } from './color/color.service';
+import { MessageFactoryService } from './factory/message-factory/message-factory.service';
 
 @Module({
   imports: [
@@ -23,7 +25,9 @@ import { SessionService } from './session/session.service';
     })
 ],
   controllers: [AppController],
-  providers: [AppService, RoomFactoryService, ExampleModifierFactoryService, UserModifierFactoryService, RoomService, WebsocketGateway, PubsubService, IdGenerationService, TicketService, SessionService],
+  providers: [AppService, RoomFactoryService, ExampleModifierFactoryService, UserModifierFactoryService, 
+    RoomService, WebsocketGateway, PubsubService, IdGenerationService, TicketService, SessionService, 
+    ColorService, MessageFactoryService],
   exports: []
 })
 export class AppModule {}

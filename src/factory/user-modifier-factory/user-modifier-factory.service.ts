@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { IdGenerationService } from 'src/id-generation/id-generation.service';
+import { ColorService } from 'src/color/color.service';
 import { UserModifier } from 'src/modifier/user-modifier';
 
 @Injectable()
 export class UserModifierFactoryService {
 
-    constructor() {}
+    constructor(private readonly colorService: ColorService ) {}
 
     makeUserModifier(): UserModifier {
-        return new UserModifier();
+        return new UserModifier(this.colorService);
     }
 }
