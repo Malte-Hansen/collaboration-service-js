@@ -13,14 +13,13 @@ export class DetachedMenuModifier {
         return Array.from(this.detachedMenus.values());
     }
 
-    detachMenu(objectId: string, detachId: string, entityType: string, position: number[], quaternion: number[], scale: number[]): string {
-        const menu: DetachedMenuModel = new DetachedMenuModel(detachId, entityType, objectId);
+    detachMenu(id: string, detachId: string, entityType: string, position: number[], quaternion: number[], scale: number[]) {
+        const menu: DetachedMenuModel = new DetachedMenuModel(detachId, entityType, id);
         menu.setPosition(position);
         menu.setQuaternion(quaternion);
         menu.setScale(scale);
-        this.detachedMenus.set(objectId, menu);
+        this.detachedMenus.set(id, menu);
         this.grabModifier.addGrabbableObject(menu);
-        return objectId;
     }
 
     closeDetachedMenu(menuId: string): boolean {

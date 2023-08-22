@@ -10,6 +10,7 @@ import { JoinLobbyPayload } from './payload/receivable/join-lobby';
 import { LobbyJoinedResponse } from './payload/sendable/lobby-joined';
 import { PubsubService } from './pubsub/pubsub.service';
 import { IdGenerationService } from './id-generation/id-generation.service';
+import { PublishedDetachedMenu } from './message/pubsub/create-room-message';
 
 @Controller()
 export class AppController {
@@ -41,11 +42,23 @@ export class AppController {
     const roomId = await this.idGenerationService.nextId();
     const landscapeId = await this.idGenerationService.nextId();
 
-    // TODO publish landscape
+    var detachedMenus: PublishedDetachedMenu[] = [];
+    for (var detachMenu of body.detachedMenus) {
+      var id = await this.idGenerationService.nextId();
+      detachedMenus.push({
+        id: id,
+        menu: detachMenu
+      });
+    }
+    
     this.pubsubService.publishCreateRoomEvent({
       roomId,
-      initialRoom: body,
-      landscapeId
+      initialRoom: {
+        landscape: body.landscape,
+        openApps: body.openApps,
+        detachedMenus: detachedMenus
+      },
+      landscapeId,
     });
 
     const roomCreatedResponse: RoomCreatedResponse = { roomId: roomId };

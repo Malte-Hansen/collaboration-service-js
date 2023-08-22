@@ -58,7 +58,7 @@ export class Room {
       return this.applicationModifier;
     }
 
-    getLandscapeModeifier(): LandscapeModifier {
+    getLandscapeModifier(): LandscapeModifier {
       return this.landscapeModifier;
     }
     

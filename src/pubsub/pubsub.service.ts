@@ -127,8 +127,23 @@ export class PubsubService {
 
   private handleCreateRoomEvent(message: CreateRoomMessage) {
     const room = this.roomService.createRoom(message.roomId, message.landscapeId);
-    room.getExampleModifier().updateExample(message.initialRoom.example.value);
+    //room.getExampleModifier().updateExample(message.initialRoom.example.value);
     // TODO init model 
+    const landscape = message.initialRoom.landscape;
+    room.getLandscapeModifier().initLandscape(landscape.landscapeToken, landscape.timestamp);
+    
+    for (const app of message.initialRoom.openApps) {
+      room.getApplicationModifier().openApplication(app.id, app.position, app.quaternion, app.scale);
+      for (const componentId of app.openComponents) {
+        room.getApplicationModifier().updateComponent(componentId, app.id, false, true);
+      }
+    }
+    
+    // TODO get unique id for detached menus
+    for (const detachedMenu of message.initialRoom.detachedMenus) {
+      room.getDetachedMenuModifier().detachMenu(detachedMenu.id, detachedMenu.menu.entityId, detachedMenu.menu.entityType, 
+        detachedMenu.menu.position, detachedMenu.menu.quaternion, detachedMenu.menu.scale);
+    }
   }
 
   private handleJoinUserEvent(message: RoomStatusMessage<JoinUserMessage>) {
