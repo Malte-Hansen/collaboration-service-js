@@ -8,6 +8,7 @@ import { GrabModifier } from 'src/modifier/grab-modifier';
 import { HeatmapModifier } from 'src/modifier/heatmap-modifier';
 import { LandscapeModifier } from 'src/modifier/landscape-modifier';
 import { UserModifier } from 'src/modifier/user-modifier';
+import { PubsubService } from 'src/pubsub/pubsub.service';
 
 @Injectable()
 export class RoomFactoryService {

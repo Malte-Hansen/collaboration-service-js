@@ -10,6 +10,7 @@ import { HEATMAP_UPDATE_EVENT, HeatmapUpdateMessage } from 'src/message/client/r
 import { HIGHLIGHTING_UPDATE_EVENT, HighlightingUpdateMessage } from 'src/message/client/receivable/highlighting-update-message';
 import { MENU_DETACHED_EVENT, MenuDetachedMessage } from 'src/message/client/receivable/menu-detached-message';
 import { MOUSE_PING_UPDATE_EVENT, MousePingUpdateMessage } from 'src/message/client/receivable/mouse-ping-update-message';
+import { OBJECT_GRABBED_EVENT, ObjectGrabbedMessage } from 'src/message/client/receivable/object-grabbed-message';
 import { PING_UPDATE_EVENT, PingUpdateMessage } from 'src/message/client/receivable/ping-update-message';
 import { SPECTATING_UPDATE_EVENT, SpectatingUpdateMessage } from 'src/message/client/receivable/spectating-update-message';
 import { TIMESTAMP_UPDATE_EVENT, TimestampUpdateMessage } from 'src/message/client/receivable/timestamp-update-message';
@@ -93,6 +94,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
 
     this.sessionService.unregister(session);
+
+    // publish disconnect (delete user...)
   }
 
   // UTIL
@@ -223,6 +226,12 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleUserPositionsMessage(@MessageBody() message: UserPositionsMessage, @ConnectedSocket() client: Socket): void {
     const roomMessage = this.messageFactoryService.makeRoomForwardMessage<UserPositionsMessage>(client, message);
     this.pubsubService.publishRoomForwardMessage(USER_POSITIONS_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(OBJECT_GRABBED_EVENT)
+  handleObjectGrabbedMessage(@MessageBody() message: ObjectGrabbedMessage, @ConnectedSocket() client: Socket): void {
+    const session = this.sessionService.lookupSession(client);
+    
   }
 
 }

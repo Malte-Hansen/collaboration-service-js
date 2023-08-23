@@ -3,6 +3,7 @@ import { GrabModifier } from "./grab-modifier";
 
 export class DetachedMenuModifier {
     private detachedMenus: Map<string, DetachedMenuModel> = new Map();
+    
     private grabModifier: GrabModifier;
 
     constructor(grabModifier: GrabModifier) {
@@ -23,15 +24,12 @@ export class DetachedMenuModifier {
     }
 
     closeDetachedMenu(menuId: string): boolean {
-        if (!this.grabModifier.isGrabbed(menuId)) {
-            const menu: DetachedMenuModel | undefined = this.detachedMenus.get(menuId);
-            if (menu) {
-                this.detachedMenus.delete(menuId);
-                this.grabModifier.removeGrabbableObject(menu);
-                return true;
-            }
+        const menu: DetachedMenuModel | undefined = this.detachedMenus.get(menuId);
+        if (menu) {
+            this.detachedMenus.delete(menuId);
+            this.grabModifier.removeGrabbableObject(menu);
+            return true;
         }
-        return false;
     }
 
     closeAllDetachedMenus(): void {

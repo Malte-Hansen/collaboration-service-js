@@ -95,7 +95,7 @@ export class PubsubService {
   }
 
   private getGrabbableObjectLock(grabId: string): string {
-    return 'grab-' + grabId;
+    return 'grabbable-object-' + grabId;
   }
 
   private publish(channel: string, message: any) {
@@ -124,7 +124,7 @@ export class PubsubService {
 
   // LOCK
 
-  async lockTimestampChannel() {
+  private async lockTimestampChannel() {
     try {
       return await this.redlock.acquire([TIMESTAMP_CHANNEL_LOCK], Number.MAX_SAFE_INTEGER);
     } catch (error) {
@@ -132,9 +132,9 @@ export class PubsubService {
     }
   }
 
-  async lockGrabbableObject(grabbableObject: GrabbableObjectModel): Promise<any> {
+  async lockGrabbableObject(objectId: string): Promise<any> {
     try {
-      return await this.redlock.acquire([this.getGrabbableObjectLock(grabbableObject.getGrabId())], Number.MAX_SAFE_INTEGER);
+      return await this.redlock.acquire([this.getGrabbableObjectLock(objectId)], Number.MAX_SAFE_INTEGER);
     } catch (error) {
       return null;
     }
@@ -237,6 +237,8 @@ export class PubsubService {
     if (room.getUserModifier().getUsers().length == 0) {
       this.roomService.deleteRoom(room.getRoomId());
     }
+
+    // TODO release locks
   }
 
   private handleExampleEvent(event: string, message: RoomForwardMessage<ExampleMessage>) {
