@@ -1,0 +1,3 @@
+interface ResponseMessage {
+    nonce: number
+  }

@@ -10,6 +10,7 @@ import { PubsubService } from './pubsub/pubsub.service';
 import { TicketService } from './ticket/ticket.service';
 import { SessionService } from './session/session.service';
 import { MessageFactoryService } from './factory/message-factory/message-factory.service';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -19,7 +20,8 @@ import { MessageFactoryService } from './factory/message-factory/message-factory
         port: 6379,
         password: 'authpassword'
       }
-    })
+    }),
+    ScheduleModule.forRoot()
 ],
   controllers: [AppController],
   providers: [AppService, RoomFactoryService, RoomService, WebsocketGateway, PubsubService, 

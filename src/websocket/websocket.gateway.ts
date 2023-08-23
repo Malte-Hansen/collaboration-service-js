@@ -3,14 +3,26 @@ import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect,
 import { Server, Socket } from 'socket.io';
 import { MessageFactoryService } from 'src/factory/message-factory/message-factory.service';
 import { IdGenerationService } from 'src/id-generation/id-generation.service';
+import { APP_OPENED_EVENT, AppOpenedMessage } from 'src/message/client/receivable/app-opened-message';
+import { COMPONENT_UPDATE_EVENT, ComponentUpdateMessage } from 'src/message/client/receivable/component-update-message';
 import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/client/receivable/example-message';
+import { HEATMAP_UPDATE_EVENT, HeatmapUpdateMessage } from 'src/message/client/receivable/heatmap-update-message';
+import { HIGHLIGHTING_UPDATE_EVENT, HighlightingUpdateMessage } from 'src/message/client/receivable/highlighting-update-message';
 import { MENU_DETACHED_EVENT, MenuDetachedMessage } from 'src/message/client/receivable/menu-detached-message';
+import { MOUSE_PING_UPDATE_EVENT, MousePingUpdateMessage } from 'src/message/client/receivable/mouse-ping-update-message';
+import { PING_UPDATE_EVENT, PingUpdateMessage } from 'src/message/client/receivable/ping-update-message';
+import { SPECTATING_UPDATE_EVENT, SpectatingUpdateMessage } from 'src/message/client/receivable/spectating-update-message';
+import { TIMESTAMP_UPDATE_EVENT, TimestampUpdateMessage } from 'src/message/client/receivable/timestamp-update-message';
+import { USER_CONTROLLER_CONNECT_EVENT, UserControllerConnectMessage } from 'src/message/client/receivable/user-controller-connect-message';
+import { USER_CONTROLLER_DISCONNECT_EVENT, UserControllerDisconnectMessage } from 'src/message/client/receivable/user-controller-disconnect-message';
+import { USER_POSITIONS_EVENT, UserPositionsMessage } from 'src/message/client/receivable/user-positions-message';
 import { ForwardedMessage } from 'src/message/client/sendable/forwarded-message';
 import { INITIAL_LANDSCAPE_EVENT } from 'src/message/client/sendable/initial-landscape-message';
 import { MENU_DETACHED_RESPONSE_EVENT, MenuDetachedResponse } from 'src/message/client/sendable/menu-detached-response';
 import { SELF_CONNECTED_EVENT } from 'src/message/client/sendable/self-connected-message';
+import { TIMESTAMP_UPDATE_TIMER_EVENT } from 'src/message/client/sendable/timestamp-update-timer-message';
 import { USER_CONNECTED_EVENT, UserConnectedMessage } from 'src/message/client/sendable/user-connected-message';
-import { PublishedMenuDetachedMessage } from 'src/message/pubsub/published-menu-detached-message';
+import { PublishIdMessage } from 'src/message/pubsub/publish-id-message';
 import { RoomForwardMessage } from 'src/message/pubsub/room-forward-message';
 import { Room } from 'src/model/room-model';
 import { PubsubService } from 'src/pubsub/pubsub.service';
@@ -19,10 +31,6 @@ import { SessionService } from 'src/session/session.service';
 import { TicketService } from 'src/ticket/ticket.service';
 import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
-
-interface ResponseMessage {
-  nonce: number
-}
 
 @WebSocketGateway()
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -106,11 +114,11 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   // SEND EVENT
 
-  sendBroadcastMessage(event: string, roomId: string, message: any): void {
-    this.sendBroadcastExceptOneMessage(event, roomId, message.userId, message);
+  sendBroadcastMessage(event: string, roomId: string, message: any) {
+    this.server.to(roomId).emit(event, message);
   }
 
-  sendBroadcastForwardedMessage(event: string, roomId: string, message: ForwardedMessage<any>): void {
+  sendBroadcastForwardedMessage(event: string, roomId: string, message: any): void {
     this.sendBroadcastExceptOneMessage(event, roomId, message.userId, message);
   }
 
@@ -144,10 +152,77 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   @SubscribeMessage(MENU_DETACHED_EVENT)
   async handleMenuDetachedMessage(@MessageBody() message: MenuDetachedMessage, @ConnectedSocket() client: Socket): Promise<void> {
     const id = await this.idGenerationService.nextId();
-    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<PublishedMenuDetachedMessage>(client, {id: id, message: message});
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<PublishIdMessage<MenuDetachedMessage>>(client, {id: id, message: message});
     this.pubsubService.publishRoomForwardMessage(MENU_DETACHED_EVENT, roomMessage);
     const response: MenuDetachedResponse = { objectId:id, nonce: message.nonce };
-    this.sendResponse(MENU_DETACHED_EVENT, client, response);
+    this.sendResponse(MENU_DETACHED_RESPONSE_EVENT, client, response);
+  }
+
+  @SubscribeMessage(APP_OPENED_EVENT)
+  handleAppOpenedMessage(@MessageBody() message: AppOpenedMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<AppOpenedMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(APP_OPENED_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(COMPONENT_UPDATE_EVENT)
+  handleComponentUpdateMessage(@MessageBody() message: ComponentUpdateMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<ComponentUpdateMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(COMPONENT_UPDATE_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(HEATMAP_UPDATE_EVENT)
+  handleHeatmapUpdateMessage(@MessageBody() message: HeatmapUpdateMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<HeatmapUpdateMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(HEATMAP_UPDATE_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(HIGHLIGHTING_UPDATE_EVENT)
+  handleHighlightingUpdateMessage(@MessageBody() message: HighlightingUpdateMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<HighlightingUpdateMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(HIGHLIGHTING_UPDATE_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(MOUSE_PING_UPDATE_EVENT)
+  handleMousePingUpdateMessage(@MessageBody() message: MousePingUpdateMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<MousePingUpdateMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(MOUSE_PING_UPDATE_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(PING_UPDATE_EVENT)
+  handlePingUpdateMessage(@MessageBody() message: PingUpdateMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<PingUpdateMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(PING_UPDATE_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(SPECTATING_UPDATE_EVENT)
+  handleSpectatingUpdateMessage(@MessageBody() message: SpectatingUpdateMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<SpectatingUpdateMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(SPECTATING_UPDATE_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(TIMESTAMP_UPDATE_EVENT)
+  handleTimestampUpdateMessage(@MessageBody() message: TimestampUpdateMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<TimestampUpdateMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(TIMESTAMP_UPDATE_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(USER_CONTROLLER_CONNECT_EVENT)
+  async handleUserControllerConnectMessage(@MessageBody() message: UserControllerConnectMessage, @ConnectedSocket() client: Socket): Promise<void> {
+    const id = await this.idGenerationService.nextId();
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<PublishIdMessage<UserControllerConnectMessage>>(client, {id, message});
+    this.pubsubService.publishRoomForwardMessage(USER_CONTROLLER_CONNECT_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(USER_CONTROLLER_DISCONNECT_EVENT)
+  handleUserControllerDisconnectMessage(@MessageBody() message: UserControllerDisconnectMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<UserControllerDisconnectMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(USER_CONTROLLER_DISCONNECT_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(USER_POSITIONS_EVENT)
+  handleUserPositionsMessage(@MessageBody() message: UserPositionsMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<UserPositionsMessage>(client, message);
+    this.pubsubService.publishRoomForwardMessage(USER_POSITIONS_EVENT, roomMessage);
   }
 
 }

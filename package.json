@@ -25,6 +25,7 @@
     "@nestjs/core": "^9.4.3",
     "@nestjs/platform-express": "^9.4.3",
     "@nestjs/platform-socket.io": "^9.4.3",
+    "@nestjs/schedule": "^3.0.3",
     "@nestjs/websockets": "^9.4.3",
     "@types/redlock": "^4.0.4",
     "@types/socket.io": "^3.0.2",

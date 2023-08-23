@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Socket } from 'socket.io';
 import { HighlightingObject, InitialApp, InitialDetachedMenu, InitialLandscapeMessage } from 'src/message/client/sendable/initial-landscape-message';
 import { SelfConnectedMessage } from 'src/message/client/sendable/self-connected-message';
+import { TimestampUpdateTimerMessage } from 'src/message/client/sendable/timestamp-update-timer-message';
 import { RoomForwardMessage } from 'src/message/pubsub/room-forward-message';
 import { HighlightingModel } from 'src/model/highlighting-model';
 import { Room } from 'src/model/room-model';
@@ -101,5 +102,11 @@ export class MessageFactoryService {
 
         return { openApps: appArray, landscape: landscapeObj, detachedMenus: detachedMenuArray};
 
+    }
+
+    makeTimestampUpdateTimerMessage(room: Room): TimestampUpdateTimerMessage {
+        const timestamp = new Date().getTime() - 60000;
+        room.getLandscapeModifier().updateTimestamp(timestamp);
+        return { timestamp };
     }
 }
