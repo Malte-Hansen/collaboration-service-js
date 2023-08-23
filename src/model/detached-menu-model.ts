@@ -5,8 +5,8 @@ export class DetachedMenuModel extends ScalableBaseModel implements GrabbableObj
     private entityType: string;
     private detachId: string;
   
-    constructor(detachId: string, entityType: string, id: string) {
-      super(id);
+    constructor(detachId: string, entityType: string, objectId: string) {
+      super(objectId);
       this.detachId = detachId;
       this.entityType = entityType;
     }

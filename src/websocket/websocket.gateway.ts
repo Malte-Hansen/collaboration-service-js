@@ -2,11 +2,16 @@ import { Inject, forwardRef } from '@nestjs/common';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { MessageFactoryService } from 'src/factory/message-factory/message-factory.service';
+import { IdGenerationService } from 'src/id-generation/id-generation.service';
 import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/client/receivable/example-message';
+import { MENU_DETACHED_EVENT, MenuDetachedMessage } from 'src/message/client/receivable/menu-detached-message';
 import { ForwardedMessage } from 'src/message/client/sendable/forwarded-message';
+import { INITIAL_LANDSCAPE_EVENT } from 'src/message/client/sendable/initial-landscape-message';
+import { MENU_DETACHED_RESPONSE_EVENT, MenuDetachedResponse } from 'src/message/client/sendable/menu-detached-response';
 import { SELF_CONNECTED_EVENT } from 'src/message/client/sendable/self-connected-message';
 import { USER_CONNECTED_EVENT, UserConnectedMessage } from 'src/message/client/sendable/user-connected-message';
-import { ForwardedPubsubMessage } from 'src/message/pubsub/forward-pubsub-message';
+import { PublishedMenuDetachedMessage } from 'src/message/pubsub/published-menu-detached-message';
+import { RoomForwardMessage } from 'src/message/pubsub/room-forward-message';
 import { Room } from 'src/model/room-model';
 import { PubsubService } from 'src/pubsub/pubsub.service';
 import { RoomService } from 'src/room/room.service';
@@ -15,6 +20,10 @@ import { TicketService } from 'src/ticket/ticket.service';
 import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
 
+interface ResponseMessage {
+  nonce: number
+}
+
 @WebSocketGateway()
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
@@ -22,7 +31,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     @Inject(forwardRef(() => TicketService)) private readonly ticketService: TicketService,
     private readonly sessionService: SessionService,
     private readonly roomService: RoomService,
-    private readonly messageFactoryService: MessageFactoryService) { }
+    private readonly messageFactoryService: MessageFactoryService,
+    @Inject(forwardRef(() => IdGenerationService)) private readonly idGenerationService: IdGenerationService) { }
 
   @WebSocketServer()
   server: Server;
@@ -62,7 +72,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     client.join(room.getRoomId());
 
     this.sendInitialUserList(session);
-    // TODO sendLandscape
+    this.sendLandscape(session);
   }
 
   handleDisconnect(client: Socket) {
@@ -96,8 +106,12 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   // SEND EVENT
 
+  sendBroadcastMessage(event: string, roomId: string, message: any): void {
+    this.sendBroadcastExceptOneMessage(event, roomId, message.userId, message);
+  }
+
   sendBroadcastForwardedMessage(event: string, roomId: string, message: ForwardedMessage<any>): void {
-    this.sendBroadcastExceptOneMessage(event, roomId, message.userId, message)
+    this.sendBroadcastExceptOneMessage(event, roomId, message.userId, message);
   }
 
   sendInitialUserList(session: Session): void  {
@@ -105,17 +119,35 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     this.sendUnicastMessage(SELF_CONNECTED_EVENT, session.getSocket(), message);
   }
 
+  sendLandscape(session: Session): void {
+    const message = this.messageFactoryService.makeInitialLandscapeMessage(session.getRoom());
+    this.sendUnicastMessage(INITIAL_LANDSCAPE_EVENT, session.getSocket(), message);
+  }
+
   sendUserConnectedMessage(roomId: string, message: UserConnectedMessage): void {
     this.sendBroadcastExceptOneMessage(USER_CONNECTED_EVENT, roomId, message.id, message);
+  }
+
+  sendResponse(event: string, client: Socket, response: ResponseMessage) {
+    this.sendUnicastMessage(event, client, response);
   }
 
   // SUBSCRIPTION HANDLERS
 
   @SubscribeMessage(EXAMPLE_EVENT)
-  handleMessage(@MessageBody() message: ExampleMessage, @ConnectedSocket() client: Socket): void {
+  handleExampleMessage(@MessageBody() message: ExampleMessage, @ConnectedSocket() client: Socket): void {
     const session = this.sessionService.lookupSession(client);
-    const forwardMessage: ForwardedPubsubMessage<ExampleMessage> = { roomId: session.getRoom().getRoomId(), userId: session.getUser().getId(), message};
-    this.pubsubService.publishForwardedMessage(EXAMPLE_EVENT, forwardMessage);
+    const forwardMessage: RoomForwardMessage<ExampleMessage> = { roomId: session.getRoom().getRoomId(), userId: session.getUser().getId(), message};
+    this.pubsubService.publishRoomForwardMessage(EXAMPLE_EVENT, forwardMessage);
+  }
+
+  @SubscribeMessage(MENU_DETACHED_EVENT)
+  async handleMenuDetachedMessage(@MessageBody() message: MenuDetachedMessage, @ConnectedSocket() client: Socket): Promise<void> {
+    const id = await this.idGenerationService.nextId();
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<PublishedMenuDetachedMessage>(client, {id: id, message: message});
+    this.pubsubService.publishRoomForwardMessage(MENU_DETACHED_EVENT, roomMessage);
+    const response: MenuDetachedResponse = { objectId:id, nonce: message.nonce };
+    this.sendResponse(MENU_DETACHED_EVENT, client, response);
   }
 
 }

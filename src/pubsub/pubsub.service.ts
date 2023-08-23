@@ -7,12 +7,15 @@ import { Ticket } from 'src/util/ticket';
 import { CREATE_ROOM_EVENT, CreateRoomMessage } from 'src/message/pubsub/create-room-message';
 import { RoomService } from 'src/room/room.service';
 import { JOIN_USER_EVENT, JoinUserMessage } from 'src/message/pubsub/join-user-message';
-import { ForwardedPubsubMessage } from 'src/message/pubsub/forward-pubsub-message';
+import { RoomForwardMessage } from 'src/message/pubsub/room-forward-message';
 import { USER_DISCONNECTED_EVENT, UserDisconnectedMessage } from 'src/message/client/sendable/user-disconnected-message';
 import { RoomStatusMessage } from 'src/message/pubsub/room-status-message';
 import { UserModel } from 'src/model/user-model';
 import Redlock from "redlock";
 import { GrabbableObjectModel } from 'src/model/grabbable-object-model';
+import { MENU_DETACHED_EVENT } from 'src/message/client/receivable/menu-detached-message';
+import { PublishedMenuDetachedMessage } from 'src/message/pubsub/published-menu-detached-message';
+import { MenuDetachedForwardMessage } from 'src/message/client/sendable/menu-detached-forward-message';
 
 const UNIQUE_ID_KEY = 'unique_id';
 
@@ -40,6 +43,7 @@ export class PubsubService {
     listener.set(JOIN_USER_EVENT, this.handleJoinUserEvent.bind(this));
     listener.set(USER_DISCONNECTED_EVENT, this.handleDisconnetedEvent.bind(this));
     listener.set(EXAMPLE_EVENT, (msg: any) => this.handleExampleEvent(EXAMPLE_EVENT, msg));
+    listener.set(MENU_DETACHED_EVENT, (msg: any) => this.handleMenuDetachedEvent(MENU_DETACHED_EVENT, msg));
 
 
     // Subscribe channels
@@ -119,18 +123,18 @@ export class PubsubService {
     this.publish(USER_DISCONNECTED_EVENT, message);
   }
 
-  publishForwardedMessage(event: string, message: ForwardedPubsubMessage<any>): void {
+  publishRoomForwardMessage(event: string, message: RoomForwardMessage<any>): void {
     this.publish(event, message);
   }
 
   // SUBSCRIPTION HANDLERS
 
   private handleCreateRoomEvent(message: CreateRoomMessage) {
-    const room = this.roomService.createRoom(message.roomId, message.landscapeId);
+    const publishedLandscape = message.initialRoom.landscape;
+    const room = this.roomService.createRoom(message.roomId, publishedLandscape.id);
     //room.getExampleModifier().updateExample(message.initialRoom.example.value);
     // TODO init model 
-    const landscape = message.initialRoom.landscape;
-    room.getLandscapeModifier().initLandscape(landscape.landscapeToken, landscape.timestamp);
+    room.getLandscapeModifier().initLandscape(publishedLandscape.landscape.landscapeToken, publishedLandscape.landscape.timestamp);
     
     for (const app of message.initialRoom.openApps) {
       room.getApplicationModifier().openApplication(app.id, app.position, app.quaternion, app.scale);
@@ -184,12 +188,22 @@ export class PubsubService {
     }
   }
 
-  private handleExampleEvent(event: string, message: ForwardedPubsubMessage<ExampleMessage>) {
+  private handleExampleEvent(event: string, message: RoomForwardMessage<ExampleMessage>) {
     const room = this.roomService.lookupRoom(message.roomId);
-
     room.getExampleModifier().updateExample(message.message.value);
-
     this.websocketGateway.sendBroadcastForwardedMessage(event, message.roomId, { userId: message.userId, message: message.message });
+  }
+
+  private handleMenuDetachedEvent(event: string, message: RoomForwardMessage<PublishedMenuDetachedMessage>) {
+    const room = this.roomService.lookupRoom(message.roomId);
+    const menu = message.message.message;
+    room.getDetachedMenuModifier().detachMenu(message.message.id, menu.detachId, menu.entityType, 
+      menu.position, menu.quaternion, menu.scale);
+    const menuDetachedForwardMessage: MenuDetachedForwardMessage = {
+      objectId: message.message.id, userId: message.userId, entityType: menu.entityType, detachId: menu.detachId,
+      position: menu.position, quaternion: menu.quaternion, scale: menu.scale
+    }
+    this.websocketGateway.sendBroadcastMessage(event, message.roomId, menuDetachedForwardMessage);
   }
 
 }

@@ -4,13 +4,13 @@ import { RoomService } from './room/room.service';
 import { TicketService } from './ticket/ticket.service';
 import { RoomListRecord } from './payload/sendable/room-list';
 import { Room } from './model/room-model';
-import { InitialRoomPayload } from './payload/receivable/initial-room';
+import { InitialRoomPayload, Landscape } from './payload/receivable/initial-room';
 import { RoomCreatedResponse } from './payload/sendable/room-created';
 import { JoinLobbyPayload } from './payload/receivable/join-lobby';
 import { LobbyJoinedResponse } from './payload/sendable/lobby-joined';
 import { PubsubService } from './pubsub/pubsub.service';
 import { IdGenerationService } from './id-generation/id-generation.service';
-import { PublishedDetachedMenu } from './message/pubsub/create-room-message';
+import { PublishedDetachedMenu, PublishedLandscape } from './message/pubsub/create-room-message';
 
 @Controller()
 export class AppController {
@@ -50,15 +50,19 @@ export class AppController {
         menu: detachMenu
       });
     }
+
+    var landscape: PublishedLandscape = {
+      id: landscapeId,
+      landscape: body.landscape
+    }
     
     this.pubsubService.publishCreateRoomEvent({
       roomId,
       initialRoom: {
-        landscape: body.landscape,
+        landscape: landscape,
         openApps: body.openApps,
         detachedMenus: detachedMenus
-      },
-      landscapeId,
+      }
     });
 
     const roomCreatedResponse: RoomCreatedResponse = { roomId: roomId };

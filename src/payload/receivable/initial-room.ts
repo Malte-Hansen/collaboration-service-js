@@ -1,7 +1,3 @@
-export type InitialExample = {
-  value: number;
-}
-
 export type InitialRoomPayload = {
   landscape: Landscape,
   openApps: App[],
@@ -29,4 +25,4 @@ export type DetachedMenu = {
   position: number[],
   quaternion: number[],
   scale: number[]
-};
+}
