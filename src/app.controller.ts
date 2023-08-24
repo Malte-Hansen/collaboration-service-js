@@ -12,7 +12,7 @@ import { PubsubService } from './pubsub/pubsub.service';
 import { IdGenerationService } from './id-generation/id-generation.service';
 import { PublishedDetachedMenu, PublishedLandscape } from './message/pubsub/create-room-message';
 
-@Controller()
+@Controller("/v2/vr")
 export class AppController {
   constructor(private readonly appService: AppService, private readonly roomService: RoomService, private readonly ticketService: TicketService,
     private readonly pubsubService: PubsubService, private readonly idGenerationService: IdGenerationService) { }
@@ -25,6 +25,8 @@ export class AppController {
     const roomListRecords: RoomListRecord[] = this.roomService.getRooms().map((room: Room) => ({
       roomId: room.getRoomId(),
       roomName: room.getName(),
+      landscapeToken: room.getLandscapeModifier().getLandscape().getLandscapeToken(),
+      size: room.getUserModifier().getUsers().length
     }));
 
     return roomListRecords;
@@ -89,6 +91,8 @@ export class AppController {
 
     const lobbyJoinedResponse: LobbyJoinedResponse =
       { ticketId: ticket.ticketId, validUntil: ticket.validUntil };
+
+    console.log("lobby joined")
 
     return lobbyJoinedResponse;
   }

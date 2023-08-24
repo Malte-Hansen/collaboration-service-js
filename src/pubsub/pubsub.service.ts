@@ -218,8 +218,7 @@ export class PubsubService {
     }
 
     // Inform other users
-    this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: message.id, message: message });
+    this.websocketGateway.sendBroadcastExceptOneMessage(event, roomMessage.roomId, message.id, message);
   }
 
   private handleUserDisconnectedEvent(event: string, roomMessage: RoomStatusMessage<UserDisconnectedMessage>) {
@@ -240,7 +239,7 @@ export class PubsubService {
   private handleExampleEvent(event: string, message: RoomForwardMessage<ExampleMessage>) {
     const room = this.roomService.lookupRoom(message.roomId);
     room.getExampleModifier().updateExample(message.message.value);
-    this.websocketGateway.sendBroadcastForwardedMessage(event, message.roomId, { userId: message.userId, message: message.message });
+    this.websocketGateway.sendBroadcastForwardedMessage(event, message.roomId, { userId: message.userId, originalMessage: message.message });
   }
 
   private handleMenuDetachedEvent(event: string, message: RoomForwardMessage<PublishIdMessage<MenuDetachedMessage>>) {
@@ -252,7 +251,7 @@ export class PubsubService {
       objectId: message.message.id, userId: message.userId, entityType: menu.entityType, detachId: menu.detachId,
       position: menu.position, quaternion: menu.quaternion, scale: menu.scale
     }
-    this.websocketGateway.sendBroadcastForwardedMessage(event, message.roomId, menuDetachedForwardMessage);
+    this.websocketGateway.sendBroadcastExceptOneMessage(event, message.roomId, message.userId, menuDetachedForwardMessage);
   }
 
   private handleAppOpenedEvent(event: string, roomMessage: RoomForwardMessage<AppOpenedMessage>) {
@@ -261,7 +260,7 @@ export class PubsubService {
     room.getApplicationModifier().openApplication(message.id, message.position,
       message.quaternion, message.scale);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleComponentUpdateEvent(event: string, roomMessage: RoomForwardMessage<ComponentUpdateMessage>) {
@@ -270,7 +269,7 @@ export class PubsubService {
     room.getApplicationModifier().updateComponent(message.componentId, message.appId,
       message.foundation, message.opened);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleHeatmapUpdateEvent(event: string, roomMessage: RoomForwardMessage<HeatmapUpdateMessage>) {
@@ -281,7 +280,7 @@ export class PubsubService {
     room.getHeatmapModifier().setMetric(message.metric);
     room.getHeatmapModifier().setApplicationId(message.applicationId);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleHighlightingUpdateEvent(event: string, roomMessage: RoomForwardMessage<HighlightingUpdateMessage>) {
@@ -290,19 +289,21 @@ export class PubsubService {
     const message = roomMessage.message;
     room.getUserModifier().updateHighlighting(user, message.appId, message.entityId, message.entityType, message.highlighted);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleMousePingUpdateEvent(event: string, roomMessage: RoomForwardMessage<MousePingUpdateMessage>) {
+    console.log("handleMousePingUpdateEvent")
     const message = roomMessage.message;
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
+      console.log("sent MousePingUpdate")
   }
 
   private handlePingUpdateEvent(event: string, roomMessage: RoomForwardMessage<PingUpdateMessage>) {
     const message = roomMessage.message;
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleSpectatingUpdateEvent(event: string, roomMessage: RoomForwardMessage<SpectatingUpdateMessage>) {
@@ -311,7 +312,7 @@ export class PubsubService {
     const message = roomMessage.message;
     room.getUserModifier().updateSpectating(user, message.spectating);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleTimestampUpdateEvent(event: string, roomMessage: RoomForwardMessage<TimestampUpdateMessage>) {
@@ -321,7 +322,7 @@ export class PubsubService {
     room.getApplicationModifier().closeAllApplications();
     room.getDetachedMenuModifier().closeAllDetachedMenus();
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleUserControllerConnectEvent(event: string, roomMessage: RoomForwardMessage<PublishIdMessage<UserControllerConnectMessage>>) {
@@ -330,7 +331,7 @@ export class PubsubService {
     const message = roomMessage.message;
     room.getUserModifier().connectController(message.id, user, message.message.controller);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleUserControllerDisconnectEvent(event: string, roomMessage: RoomForwardMessage<UserControllerDisconnectMessage>) {
@@ -339,7 +340,7 @@ export class PubsubService {
     const message = roomMessage.message;
     room.getUserModifier().disconnectController(user, message.controllerId);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleUserPositionsEvent(event: string, roomMessage: RoomForwardMessage<UserPositionsMessage>) {
@@ -350,11 +351,10 @@ export class PubsubService {
     room.getUserModifier().updateControllerPose(user.getController(0), message.controller1);
     room.getUserModifier().updateControllerPose(user.getController(1), message.controller2);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleTimestampUpdateTimerEvent(event: string, roomMessage: RoomStatusMessage<TimestampUpdateTimerMessage>) {
-    console.log('Received: ', roomMessage);
     this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, roomMessage.message);
   }
 
@@ -363,7 +363,7 @@ export class PubsubService {
     const message = roomMessage.message;
     room.getGrabModifier().moveObject(message.objectId, message.position, message.quaternion, message.scale);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleAppClosedEvent(event: string, roomMessage: RoomForwardMessage<AppClosedMessage>) {
@@ -371,7 +371,7 @@ export class PubsubService {
     const message = roomMessage.message;
     room.getApplicationModifier().closeApplication(message.appId);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
   private handleDetachedMenuClosedEvent(event: string, roomMessage: RoomForwardMessage<DetachedMenuClosedMessage>) {
@@ -379,7 +379,7 @@ export class PubsubService {
     const message = roomMessage.message;
     room.getDetachedMenuModifier().closeDetachedMenu(message.menuId);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
-      { userId: roomMessage.userId, message: message });
+      { userId: roomMessage.userId, originalMessage: message });
   }
 
 

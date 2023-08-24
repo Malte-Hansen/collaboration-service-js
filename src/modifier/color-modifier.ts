@@ -46,4 +46,8 @@ export class ColorModifier {
         this.counters.set(colorId, count - 1);
     }
 
+    serializeColor(color: Color): number[] {
+        return [color.red, color.green, color.blue];
+    }
+
 }

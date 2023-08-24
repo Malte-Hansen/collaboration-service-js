@@ -26,6 +26,7 @@ import { INITIAL_LANDSCAPE_EVENT } from 'src/message/client/sendable/initial-lan
 import { MENU_DETACHED_RESPONSE_EVENT, MenuDetachedResponse } from 'src/message/client/sendable/menu-detached-response';
 import { OBJECT_CLOSED_RESPONSE_EVENT, ObjectClosedResponse } from 'src/message/client/sendable/object-closed-response';
 import { OBJECT_GRABBED_RESPONSE_EVENT, ObjectGrabbedResponse } from 'src/message/client/sendable/object-grabbed-response';
+import { ResponseMessage } from 'src/message/client/sendable/response-message';
 import { SELF_CONNECTED_EVENT } from 'src/message/client/sendable/self-connected-message';
 import { TIMESTAMP_UPDATE_TIMER_EVENT } from 'src/message/client/sendable/timestamp-update-timer-message';
 import { USER_CONNECTED_EVENT, UserConnectedMessage } from 'src/message/client/sendable/user-connected-message';
@@ -41,7 +42,7 @@ import { GrabbableObjectLock } from 'src/util/grabbable-object-lock';
 import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
 
-@WebSocketGateway()
+@WebSocketGateway({ cors: true})
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(@Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService,
@@ -118,13 +119,13 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
       this.messageFactoryService.makeRoomStatusMessage(session.getRoom().getRoomId(), message));
   }
 
-  // UTIL
+  // SEND EVENT
 
   private sendUnicastMessage(event: string, client: Socket, message: any): void {
     this.server.to(client.id).emit(event, message);
   }
 
-  private sendBroadcastExceptOneMessage(event: string, roomId: string, userId: string, message: any): void {
+  sendBroadcastExceptOneMessage(event: string, roomId: string, userId: string, message: any): void {
     const client = this.sessionService.lookupSocket(userId);
     if (client) {
       // Exclude sender of the message if it is connected to the server
@@ -135,13 +136,11 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
   }
 
-  // SEND EVENT
-
   sendBroadcastMessage(event: string, roomId: string, message: any) {
     this.server.to(roomId).emit(event, message);
   }
 
-  sendBroadcastForwardedMessage(event: string, roomId: string, message: any): void {
+  sendBroadcastForwardedMessage(event: string, roomId: string, message: ForwardedMessage<any>): void {
     this.sendBroadcastExceptOneMessage(event, roomId, message.userId, message);
   }
 
@@ -155,7 +154,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     this.sendUnicastMessage(INITIAL_LANDSCAPE_EVENT, session.getSocket(), message);
   }
 
-  sendResponse(event: string, client: Socket, response: ResponseMessage) {
+  sendResponse(event: string, client: Socket, nonce: number, message: any): void {
+    const response: ResponseMessage<any> = { nonce, message};
     this.sendUnicastMessage(event, client, response);
   }
 
@@ -173,8 +173,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     const id = await this.idGenerationService.nextId();
     const roomMessage = this.messageFactoryService.makeRoomForwardMessage<PublishIdMessage<MenuDetachedMessage>>(client, {id: id, message: message});
     this.pubsubService.publishRoomForwardMessage(MENU_DETACHED_EVENT, roomMessage);
-    const response: MenuDetachedResponse = { objectId:id, nonce: message.nonce };
-    this.sendResponse(MENU_DETACHED_RESPONSE_EVENT, client, response);
+    const response: MenuDetachedResponse = { objectId:id };
+    this.sendResponse(MENU_DETACHED_RESPONSE_EVENT, client, message.nonce, response);
   }
 
   @SubscribeMessage(APP_OPENED_EVENT)
@@ -203,6 +203,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage(MOUSE_PING_UPDATE_EVENT)
   handleMousePingUpdateMessage(@MessageBody() message: MousePingUpdateMessage, @ConnectedSocket() client: Socket): void {
+    console.log("handleMousePingUpdateMessage")
     const roomMessage = this.messageFactoryService.makeRoomForwardMessage<MousePingUpdateMessage>(client, message);
     this.pubsubService.publishRoomForwardMessage(MOUSE_PING_UPDATE_EVENT, roomMessage);
   }
@@ -257,8 +258,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         success = true;
       }
     }
-    const response: ObjectGrabbedResponse = { nonce: message.nonce, success: success };
-    this.sendResponse(OBJECT_GRABBED_EVENT, client, response);
+    const response: ObjectGrabbedResponse = { success: success };
+    this.sendResponse(OBJECT_GRABBED_EVENT, client, message.nonce, response);
   }
 
   @SubscribeMessage(OBJECT_MOVED_EVENT)
@@ -294,8 +295,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         this.pubsubService.publishRoomForwardMessage(APP_CLOSED_EVENT, roomMessage);
       }
     }
-    const response: ObjectClosedResponse = { nonce: message.nonce, success: success };
-    this.sendResponse(OBJECT_CLOSED_RESPONSE_EVENT, client, response);
+    const response: ObjectClosedResponse = { success: success };
+    this.sendResponse(OBJECT_CLOSED_RESPONSE_EVENT, client, message.nonce, response);
   }
 
   @SubscribeMessage(DETACHED_MENU_CLOSED_EVENT)
@@ -311,8 +312,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         this.pubsubService.publishRoomForwardMessage(DETACHED_MENU_CLOSED_EVENT, roomMessage);
       }
     }
-    const response: ObjectClosedResponse = { nonce: message.nonce, success: success };
-    this.sendResponse(OBJECT_CLOSED_RESPONSE_EVENT, client, response);
+    const response: ObjectClosedResponse = { success: success };
+    this.sendResponse(OBJECT_CLOSED_RESPONSE_EVENT, client, message.nonce, response);
   }
 
 }

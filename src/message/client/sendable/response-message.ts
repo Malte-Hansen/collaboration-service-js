@@ -1,3 +1,4 @@
-interface ResponseMessage {
-    nonce: number
+export type ResponseMessage<T> = {
+    nonce: number,
+    message: T
   }
