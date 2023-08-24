@@ -1,5 +1,6 @@
 export const OBJECT_GRABBED_EVENT = "object_grabbed";
 
 export type ObjectGrabbedMessage = {
-    objectId: string
+    objectId: string,
+    nonce: number
 };

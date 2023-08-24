@@ -64,9 +64,9 @@ export class UserModifier {
     user.setHighlightedEntity(appId, entityType, entityId);
   }
 
-  makeUserModel(userId: string, userName: string, colorId: number): UserModel {
+  makeUserModel(userId: string, userName: string, colorId: number, position: number[], quaternion: number[]): UserModel {
     const color = this.colorModifier.assignColor(colorId);
-    return new UserModel(userId, userName, color);
+    return new UserModel(userId, userName, color, position, quaternion);
   }
 
   makeControllerModel(id: string, controllerId: number, assetUrl: string): ControllerModel {

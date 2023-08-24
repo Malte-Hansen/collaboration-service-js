@@ -19,13 +19,13 @@ export class UserModel extends BaseModel {
   private highlightedEntity: HighlightingModel; 
 
 
-  constructor(id: string, userName: string, color: Color) {
+  constructor(id: string, userName: string, color: Color, position: number[], quaternion: number[]) {
     super(id);
     this.userName = userName;
     this.color = color;
     this.controllers = new Map();
-    this.setPosition([0,0,0]);
-    this.setQuaternion([0,0,0,0]);
+    this.setPosition(position);
+    this.setQuaternion(quaternion);
   }
 
   getColor(): Color {
