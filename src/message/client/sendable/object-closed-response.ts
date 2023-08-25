@@ -1,4 +1,4 @@
-export const OBJECT_CLOSED_RESPONSE_EVENT = 'object_closed';
+export const OBJECT_CLOSED_RESPONSE_EVENT = 'object_closed_response';
 
 export type ObjectClosedResponse = {
     success: boolean
