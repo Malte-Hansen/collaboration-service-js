@@ -1,4 +1,4 @@
 export type ResponseMessage<T> = {
     nonce: number,
-    message: T
+    response: T
   }

@@ -21,6 +21,7 @@ import { TIMESTAMP_UPDATE_EVENT, TimestampUpdateMessage } from 'src/message/clie
 import { USER_CONTROLLER_CONNECT_EVENT, UserControllerConnectMessage } from 'src/message/client/receivable/user-controller-connect-message';
 import { USER_CONTROLLER_DISCONNECT_EVENT, UserControllerDisconnectMessage } from 'src/message/client/receivable/user-controller-disconnect-message';
 import { USER_POSITIONS_EVENT, UserPositionsMessage } from 'src/message/client/receivable/user-positions-message';
+import { VISUALIZATION_MODE_UPDATE_EVENT, VisualizationModeUpdateMessage } from 'src/message/client/receivable/visualization-mode-update';
 import { ForwardedMessage } from 'src/message/client/sendable/forwarded-message';
 import { INITIAL_LANDSCAPE_EVENT } from 'src/message/client/sendable/initial-landscape-message';
 import { MENU_DETACHED_RESPONSE_EVENT, MenuDetachedResponse } from 'src/message/client/sendable/menu-detached-response';
@@ -41,8 +42,9 @@ import { TicketService } from 'src/ticket/ticket.service';
 import { GrabbableObjectLock } from 'src/util/grabbable-object-lock';
 import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
+import { VisualizationMode } from 'src/util/visualization-mode';
 
-@WebSocketGateway({ cors: true})
+@WebSocketGateway({ cors: true })
 export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   constructor(@Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService,
@@ -50,7 +52,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     private readonly sessionService: SessionService,
     private readonly roomService: RoomService,
     private readonly messageFactoryService: MessageFactoryService,
-    @Inject(forwardRef(() => IdGenerationService)) private readonly idGenerationService: IdGenerationService) { }
+    @Inject(forwardRef(() => IdGenerationService)) private readonly idGenerationService: IdGenerationService) {
+    }
 
   @WebSocketServer()
   server: Server;
@@ -63,6 +66,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     // Query params
     const ticketId: string = (client.handshake.query.ticketId as string);
     const userName: string = (client.handshake.query.userName as string);
+    const mode: VisualizationMode = (client.handshake.query.mode as VisualizationMode);
     // TODO query params for user position ? 
 
     var ticket: Ticket;
@@ -94,6 +98,10 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     // Add socket to IO Room
     client.join(room.getRoomId());
 
+    // Add to VR room if user should receive AR/VR messages
+    if (mode != 'browser') 
+      client.join(this.getVrRoom(room.getRoomId()));
+
     this.sendInitialUserList(session);
     this.sendLandscape(session);
   }
@@ -119,10 +127,28 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
       this.messageFactoryService.makeRoomStatusMessage(session.getRoom().getRoomId(), message));
   }
 
+  // UTIL
+
+  private getVrRoom(roomId: string): string {
+    return roomId + "-vr"
+  }
+
   // SEND EVENT
 
   private sendUnicastMessage(event: string, client: Socket, message: any): void {
     this.server.to(client.id).emit(event, message);
+  }
+
+  sendVrOnlyForwardedMessage(event: string, roomId: string, message: ForwardedMessage<any>): void {
+    const userId = message.userId;
+    const client = this.sessionService.lookupSocket(userId);
+    if (client) {
+      // Exclude sender of the message if it is connected to the server
+      client.to(this.getVrRoom(roomId)).emit(event, message);
+    } else {
+      // Otherwise send to all clients
+      this.server.to(this.getVrRoom(roomId)).emit(event, message);
+    }
   }
 
   sendBroadcastExceptOneMessage(event: string, roomId: string, userId: string, message: any): void {
@@ -155,17 +181,21 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   sendResponse(event: string, client: Socket, nonce: number, message: any): void {
-    const response: ResponseMessage<any> = { nonce, message};
+    const response: ResponseMessage<any> = { nonce, response: message};
     this.sendUnicastMessage(event, client, response);
   }
 
   // SUBSCRIPTION HANDLERS
 
-  @SubscribeMessage(EXAMPLE_EVENT)
-  handleExampleMessage(@MessageBody() message: ExampleMessage, @ConnectedSocket() client: Socket): void {
+  @SubscribeMessage(VISUALIZATION_MODE_UPDATE_EVENT)
+  handleVisualizationModeUpdateMessage(@MessageBody() message: VisualizationModeUpdateMessage, @ConnectedSocket() client: Socket): void {
     const session = this.sessionService.lookupSession(client);
-    const forwardMessage: RoomForwardMessage<ExampleMessage> = { roomId: session.getRoom().getRoomId(), userId: session.getUser().getId(), message};
-    this.pubsubService.publishRoomForwardMessage(EXAMPLE_EVENT, forwardMessage);
+    const vrRoom = this.getVrRoom(session.getRoom().getRoomId());
+    if (message.mode == 'browser') {
+      client.leave(vrRoom);
+    } else {
+      client.join(vrRoom);
+    }
   }
 
   @SubscribeMessage(MENU_DETACHED_EVENT)
@@ -203,7 +233,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage(MOUSE_PING_UPDATE_EVENT)
   handleMousePingUpdateMessage(@MessageBody() message: MousePingUpdateMessage, @ConnectedSocket() client: Socket): void {
-    console.log("handleMousePingUpdateMessage")
     const roomMessage = this.messageFactoryService.makeRoomForwardMessage<MousePingUpdateMessage>(client, message);
     this.pubsubService.publishRoomForwardMessage(MOUSE_PING_UPDATE_EVENT, roomMessage);
   }
@@ -258,8 +287,8 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         success = true;
       }
     }
-    const response: ObjectGrabbedResponse = { success: success };
-    this.sendResponse(OBJECT_GRABBED_EVENT, client, message.nonce, response);
+    const response: ObjectGrabbedResponse = { isSuccess: success };
+    this.sendResponse(OBJECT_GRABBED_RESPONSE_EVENT, client, message.nonce, response);
   }
 
   @SubscribeMessage(OBJECT_MOVED_EVENT)
@@ -295,7 +324,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         this.pubsubService.publishRoomForwardMessage(APP_CLOSED_EVENT, roomMessage);
       }
     }
-    const response: ObjectClosedResponse = { success: success };
+    const response: ObjectClosedResponse = { isSuccess: success };
     this.sendResponse(OBJECT_CLOSED_RESPONSE_EVENT, client, message.nonce, response);
   }
 
@@ -312,7 +341,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
         this.pubsubService.publishRoomForwardMessage(DETACHED_MENU_CLOSED_EVENT, roomMessage);
       }
     }
-    const response: ObjectClosedResponse = { success: success };
+    const response: ObjectClosedResponse = { isSuccess: success };
     this.sendResponse(OBJECT_CLOSED_RESPONSE_EVENT, client, message.nonce, response);
   }
 

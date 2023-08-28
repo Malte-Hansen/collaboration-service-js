@@ -293,11 +293,9 @@ export class PubsubService {
   }
 
   private handleMousePingUpdateEvent(event: string, roomMessage: RoomForwardMessage<MousePingUpdateMessage>) {
-    console.log("handleMousePingUpdateEvent")
     const message = roomMessage.message;
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
       { userId: roomMessage.userId, originalMessage: message });
-      console.log("sent MousePingUpdate")
   }
 
   private handlePingUpdateEvent(event: string, roomMessage: RoomForwardMessage<PingUpdateMessage>) {
@@ -350,7 +348,7 @@ export class PubsubService {
     room.getUserModifier().updateUserPose(user, message.camera);
     room.getUserModifier().updateControllerPose(user.getController(0), message.controller1);
     room.getUserModifier().updateControllerPose(user.getController(1), message.controller2);
-    this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
+    this.websocketGateway.sendVrOnlyForwardedMessage(event, roomMessage.roomId, 
       { userId: roomMessage.userId, originalMessage: message });
   }
 
