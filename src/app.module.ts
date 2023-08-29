@@ -16,9 +16,9 @@ import { ScheduleModule } from '@nestjs/schedule';
   imports: [
     RedisModule.forRoot({
       config: {
-        host: 'localhost',
-        port: 6379,
-        password: 'authpassword'
+        host: process.env.REDIS_HOST || 'localhost' ,
+        port: parseInt(process.env.REDIS_PORT || '6379'),
+        password: process.env.REDIS_PASSWORD || 'authpassword'
       }
     }),
     ScheduleModule.forRoot()
