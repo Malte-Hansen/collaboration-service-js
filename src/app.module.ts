@@ -6,11 +6,13 @@ import { RoomService } from './room/room.service';
 import { IdGenerationService } from './id-generation/id-generation.service';
 import { RoomFactoryService } from './factory/room-factory/room-factory.service';
 import { WebsocketGateway } from './websocket/websocket.gateway';
-import { PubsubService } from './pubsub/pubsub.service';
 import { TicketService } from './ticket/ticket.service';
 import { SessionService } from './session/session.service';
 import { MessageFactoryService } from './factory/message-factory/message-factory.service';
 import { ScheduleModule } from '@nestjs/schedule';
+import { LockService } from './lock/lock.service';
+import { PublisherService } from './publisher/publisher.service';
+import { SubscriberService } from './subscriber/subscriber.service';
 
 @Module({
   imports: [
@@ -24,8 +26,9 @@ import { ScheduleModule } from '@nestjs/schedule';
     ScheduleModule.forRoot()
 ],
   controllers: [AppController],
-  providers: [AppService, RoomFactoryService, RoomService, WebsocketGateway, PubsubService, 
-    IdGenerationService, TicketService, SessionService, MessageFactoryService],
+  providers: [AppService, RoomFactoryService, RoomService, WebsocketGateway, 
+    IdGenerationService, TicketService, SessionService, MessageFactoryService, LockService, 
+    PublisherService, SubscriberService],
   exports: []
 })
 export class AppModule {}

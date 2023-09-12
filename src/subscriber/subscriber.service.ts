@@ -1,17 +1,13 @@
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { EXAMPLE_EVENT, ExampleMessage } from 'src/message/client/receivable/example-message';
 import { RedisService } from '@liaoliaots/nestjs-redis';
 import { WebsocketGateway } from 'src/websocket/websocket.gateway';
-import { Ticket } from 'src/util/ticket';
 import { CREATE_ROOM_EVENT, CreateRoomMessage } from 'src/message/pubsub/create-room-message';
 import { RoomService } from 'src/room/room.service';
 import { RoomForwardMessage } from 'src/message/pubsub/room-forward-message';
 import { USER_DISCONNECTED_EVENT, UserDisconnectedMessage } from 'src/message/client/sendable/user-disconnected-message';
 import { RoomStatusMessage } from 'src/message/pubsub/room-status-message';
 import { UserModel } from 'src/model/user-model';
-import Redlock from "redlock";
-import { GrabbableObjectModel } from 'src/model/grabbable-object-model';
 import { MENU_DETACHED_EVENT, MenuDetachedMessage } from 'src/message/client/receivable/menu-detached-message';
 import { MenuDetachedForwardMessage } from 'src/message/client/sendable/menu-detached-forward-message';
 import { APP_OPENED_EVENT, AppOpenedMessage } from 'src/message/client/receivable/app-opened-message';
@@ -27,34 +23,21 @@ import { PublishIdMessage } from 'src/message/pubsub/publish-id-message';
 import { USER_CONTROLLER_DISCONNECT_EVENT, UserControllerDisconnectMessage } from 'src/message/client/receivable/user-controller-disconnect-message';
 import { USER_POSITIONS_EVENT, UserPositionsMessage } from 'src/message/client/receivable/user-positions-message';
 import { TIMESTAMP_UPDATE_TIMER_EVENT, TimestampUpdateTimerMessage } from 'src/message/client/sendable/timestamp-update-timer-message';
-import { MessageFactoryService } from 'src/factory/message-factory/message-factory.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { OBJECT_MOVED_EVENT, ObjectMovedMessage } from 'src/message/client/receivable/object-moved-message';
 import { APP_CLOSED_EVENT, AppClosedMessage } from 'src/message/client/receivable/app-closed-message';
 import { DETACHED_MENU_CLOSED_EVENT, DetachedMenuClosedMessage } from 'src/message/client/receivable/detached-menu-closed-message';
 import { USER_CONNECTED_EVENT, UserConnectedMessage } from 'src/message/client/sendable/user-connected-message';
 
-const UNIQUE_ID_KEY = 'unique_id';
-const TIMESTAMP_CHANNEL_LOCK = 'timestamp_channel_lock';
-
 @Injectable()
-export class PubsubService {
+export class SubscriberService {
 
-  private readonly cacheClient: Redis;
-  private readonly publisher: Redis;
-  private readonly subscriber: Redis;
-  private readonly redlock: Redlock;
+  private readonly redis: Redis;
 
   constructor(private readonly redisService: RedisService, private readonly roomService: RoomService,
-    @Inject(forwardRef(() => WebsocketGateway)) private readonly websocketGateway: WebsocketGateway,
-    private readonly messageFactoryService: MessageFactoryService) {
+    @Inject(forwardRef(() => WebsocketGateway)) private readonly websocketGateway: WebsocketGateway) {
 
-    this.publisher = this.redisService.getClient();
-    this.subscriber = this.publisher.duplicate();
-    this.cacheClient = this.publisher.duplicate();
-    this.redlock = new Redlock([this.publisher.duplicate()], {
-      retryCount: 5, retryDelay: 100
-    });
+    this.redis = this.redisService.getClient().duplicate();
+
 
     // Register event listener
     const listener: Map<string, (...args: any) => void> = new Map();
@@ -80,101 +63,16 @@ export class PubsubService {
 
     // Subscribe channels
     for (var channel of listener.keys()) {
-      this.subscriber.subscribe(channel);
+      this.redis.subscribe(channel);
     }
 
-    this.subscriber.on('message', (channel: string, data: string) => {
+    this.redis.on('message', (channel: string, data: string) => {
       const message = JSON.parse(data);
       if (listener.has(channel)) {
         // call handler method
         listener.get(channel)(message);
       }
     });
-  }
-
-  /// UTIL
-
-  private getTicketKey(ticketId: string): string {
-    return 'ticket-' + ticketId;
-  }
-
-  private getGrabbableObjectLockResource(grabId: string): string {
-    return 'grabbable-object-' + grabId;
-  }
-
-  private publish(channel: string, message: any) {
-    this.publisher.publish(channel, JSON.stringify(message));
-  }
-
-  /// KEY VALUE STORAGE
-
-  async getUniqueId(): Promise<number> {
-    const keyExists = await this.cacheClient.exists(UNIQUE_ID_KEY);
-    if (keyExists == 0) {
-      this.cacheClient.set(UNIQUE_ID_KEY, 0);
-    }
-    const nextUniqueKey = this.cacheClient.incr(UNIQUE_ID_KEY);
-    return nextUniqueKey;
-  }
-
-  async storeTicket(ticket: Ticket): Promise<void> {
-    await this.cacheClient.set(this.getTicketKey(ticket.ticketId), JSON.stringify(ticket));
-  }
-
-  async getTicket(ticketId: string): Promise<Ticket | null> {
-    const ticket = await this.cacheClient.get(this.getTicketKey(ticketId));
-    return ticket ? JSON.parse(ticket) : null;
-  }
-
-  // LOCK
-
-  private async lockTimestampChannel() {
-    try {
-      return await this.redlock.acquire([TIMESTAMP_CHANNEL_LOCK], Number.MAX_SAFE_INTEGER);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  async lockGrabbableObject(grabbableObject: GrabbableObjectModel): Promise<any> {
-    try {
-      return await this.redlock.acquire([this.getGrabbableObjectLockResource(grabbableObject.getGrabId())], Number.MAX_SAFE_INTEGER);
-    } catch (error) {
-      return null;
-    }
-  }
-
-  async releaseGrabbableObjectLock(lock: any) {
-    await this.redlock.release(lock);
-  }
-
-  /// SCHEDULED EVENT
-
-  @Cron(CronExpression.EVERY_10_SECONDS)
-  publishTimestampUpdateTimeMessage() {
-    const lock = this.lockTimestampChannel()
-    if (lock) {
-      for (const room of this.roomService.getRooms()) {
-        const message: RoomStatusMessage<TimestampUpdateTimerMessage> =
-          { roomId: room.getRoomId(), message: this.messageFactoryService.makeTimestampUpdateTimerMessage(room) };
-        this.publish(TIMESTAMP_UPDATE_TIMER_EVENT, message);
-      }
-    }
-  }
-
-
-  /// PUBLISH EVENT
-
-  publishCreateRoomEvent(message: CreateRoomMessage) {
-    this.publish(CREATE_ROOM_EVENT, message);
-  }
-
-  publishRoomStatusMessage(event: string, message: RoomStatusMessage<any>) {
-    this.publish(event, message);
-  }
-
-  publishRoomForwardMessage(event: string, message: RoomForwardMessage<any>): void {
-    this.publish(event, message);
   }
 
   // SUBSCRIPTION HANDLERS
@@ -234,12 +132,6 @@ export class PubsubService {
     }
 
     this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, roomMessage.message);
-  }
-
-  private handleExampleEvent(event: string, message: RoomForwardMessage<ExampleMessage>) {
-    const room = this.roomService.lookupRoom(message.roomId);
-    room.getExampleModifier().updateExample(message.message.value);
-    this.websocketGateway.sendBroadcastForwardedMessage(event, message.roomId, { userId: message.userId, originalMessage: message.message });
   }
 
   private handleMenuDetachedEvent(event: string, message: RoomForwardMessage<PublishIdMessage<MenuDetachedMessage>>) {

@@ -8,14 +8,14 @@ import { InitialRoomPayload, Landscape } from './payload/receivable/initial-room
 import { RoomCreatedResponse } from './payload/sendable/room-created';
 import { JoinLobbyPayload } from './payload/receivable/join-lobby';
 import { LobbyJoinedResponse } from './payload/sendable/lobby-joined';
-import { PubsubService } from './pubsub/pubsub.service';
 import { IdGenerationService } from './id-generation/id-generation.service';
 import { PublishedDetachedMenu, PublishedLandscape } from './message/pubsub/create-room-message';
+import { PublisherService } from './publisher/publisher.service';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService, private readonly roomService: RoomService, private readonly ticketService: TicketService,
-    private readonly pubsubService: PubsubService, private readonly idGenerationService: IdGenerationService) { }
+    private readonly publisherService: PublisherService, private readonly idGenerationService: IdGenerationService) { }
 
   /**
    * Gets the IDs of all rooms.
@@ -58,7 +58,7 @@ export class AppController {
       landscape: body.landscape
     }
     
-    this.pubsubService.publishCreateRoomEvent({
+    this.publisherService.publishCreateRoomEvent({
       roomId,
       initialRoom: {
         landscape: landscape,

@@ -1,9 +1,10 @@
-import { Inject, Injectable, forwardRef } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IdGenerationService } from 'src/id-generation/id-generation.service';
-import { PubsubService } from 'src/pubsub/pubsub.service';
+import { RedisService } from '@liaoliaots/nestjs-redis';
 import { RoomService } from 'src/room/room.service';
 import { Ticket } from 'src/util/ticket';
 import { v4 as uuidv4 } from 'uuid';
+import { Redis } from 'ioredis';
 
 /**
  * A service that manages drawn tickets that have not yet been used to establish the websocket
@@ -15,17 +16,20 @@ import { v4 as uuidv4 } from 'uuid';
 @Injectable()
 export class TicketService {
 
-    constructor(private readonly roomService: RoomService, 
-        @Inject(forwardRef(() => PubsubService)) private readonly pubsubService: PubsubService, 
-        private readonly idGenerationService: IdGenerationService) {}
+    private readonly redis: Redis;
 
-  /**
-   * Time for how long a ticket is valid.
-   *
-   * When the user draws a ticket, they have to establish the websocket connection within this
-   * period.
-   */
-    private readonly TICKET_EXPIRY_PERIOD_IN_SECONDS = 30; 
+    constructor(private readonly redisService: RedisService, private readonly roomService: RoomService,
+        private readonly idGenerationService: IdGenerationService) {
+        this.redis = this.redisService.getClient().duplicate();
+    }
+
+    /**
+     * Time for how long a ticket is valid.
+     *
+     * When the user draws a ticket, they have to establish the websocket connection within this
+     * period.
+     */
+    private readonly TICKET_EXPIRY_PERIOD_IN_SECONDS = 30;
 
 
     async drawTicket(roomId: string): Promise<Ticket> {
@@ -33,18 +37,18 @@ export class TicketService {
         const userId = await this.idGenerationService.nextId();
         var validUntil = new Date();
         validUntil.setSeconds(validUntil.getSeconds() + this.TICKET_EXPIRY_PERIOD_IN_SECONDS);
-        const ticket: Ticket = {ticketId, roomId, userId, validUntil: validUntil.getTime()}
-        this.pubsubService.storeTicket(ticket);
+        const ticket: Ticket = { ticketId, roomId, userId, validUntil: validUntil.getTime() }
+        this.storeTicket(ticket);
         return ticket;
     }
 
     async redeemTicket(ticketId: string): Promise<Ticket> {
 
-        const ticket = await this.pubsubService.getTicket(ticketId);
+        const ticket = await this.getTicket(ticketId);
 
         if (!ticket) {
             throw new Error("Ticket with id " + ticketId + " does not exist")
-          }
+        }
 
         // Ensure that the room still exists.
         const roomId = ticket.roomId;
@@ -60,5 +64,18 @@ export class TicketService {
         }
 
         return ticket;
+    }
+
+    private getTicketKey(ticketId: string): string {
+        return 'ticket-' + ticketId;
+    }
+
+    private async storeTicket(ticket: Ticket): Promise<void> {
+        await this.redis.set(this.getTicketKey(ticket.ticketId), JSON.stringify(ticket));
+    }
+
+    private async getTicket(ticketId: string): Promise<Ticket | null> {
+        const ticket = await this.redis.get(this.getTicketKey(ticketId));
+        return ticket ? JSON.parse(ticket) : null;
     }
 }
