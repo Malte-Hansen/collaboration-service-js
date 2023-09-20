@@ -18,10 +18,7 @@ export class IdGenerationService {
     }
 
     private async getUniqueId(): Promise<number> {
-        const keyExists = await this.redis.exists(UNIQUE_ID_KEY);
-        if (keyExists == 0) {
-          this.redis.set(UNIQUE_ID_KEY, 0);
-        }
+        await this.redis.setnx(UNIQUE_ID_KEY, 0);
         const nextUniqueKey = this.redis.incr(UNIQUE_ID_KEY);
         return nextUniqueKey;
       }
