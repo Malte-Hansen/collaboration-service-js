@@ -1,0 +1,22 @@
+{
+    "detachId": "135a2307ed9028ece54746a808fb41f8f63fecba82ec561e0e24ad4fa9e425d1",
+    "entityType": "component",
+    "event": "menu_detached",
+    "nonce": 13,
+    "position": [
+        50,
+        240.29999999999995,
+        -325
+    ],
+    "quaternion": [
+        0,
+        0,
+        0,
+        0
+    ],
+    "scale": [
+        1,
+        1,
+        1
+    ]
+}
