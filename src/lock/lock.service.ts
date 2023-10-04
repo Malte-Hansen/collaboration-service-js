@@ -7,6 +7,8 @@ import { UserModel } from 'src/model/user-model';
 
 const TIMESTAMP_CHANNEL_LOCK = 'timestamp_channel_lock';
 
+const OBJECT_LOCK_RESOURCE_PREFIX = 'grabbable-object-';
+
 @Injectable()
 export class LockService {
 
@@ -22,7 +24,7 @@ export class LockService {
     }
 
     private getGrabbableObjectLockResource(grabId: string): string {
-        return 'grabbable-object-' + grabId;
+        return OBJECT_LOCK_RESOURCE_PREFIX + grabId;
     }
 
     async lockGrabbableObject(user: UserModel, object: GrabbableObjectModel): Promise<boolean> {

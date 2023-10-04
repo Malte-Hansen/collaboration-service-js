@@ -49,7 +49,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     private readonly messageFactoryService: MessageFactoryService,
     private readonly idGenerationService: IdGenerationService,
     private readonly lockService: LockService,
-    private readonly publisherService: PublisherService,) {
+    private readonly publisherService: PublisherService) {
     }
 
   @WebSocketServer()
