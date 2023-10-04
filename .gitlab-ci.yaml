@@ -1,0 +1,26 @@
+image: node:18
+
+services:
+  - name: redis:latest
+
+stages:
+  - build
+  - test
+
+variables:
+  REDIS_HOST: redis
+
+before_script:
+  - npm install
+
+build:
+  stage: build
+  script:
+    - npm run build
+
+test:
+  stage: test
+  script:
+    - npm run start &
+    - sleep 10
+    - npm run test:supertest
