@@ -273,7 +273,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     const object = session.getRoom().getGrabModifier().getGrabbableObject(message.objectId);
     var success = false;
     if (object) {
-      success = await this.lockService.lockGrabbableObject(session.getUser(), object);
+      success = await this.lockService.lockGrabbableObject(session.getRoom(), session.getUser(), object);
     }
     const response: ObjectGrabbedResponse = { isSuccess: success };
     this.sendResponse(OBJECT_GRABBED_RESPONSE_EVENT, client, message.nonce, response);
@@ -300,7 +300,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     const object = session.getRoom().getGrabModifier().getGrabbableObject(message.appId);
     var success = false;
     if (object) {
-      success = await this.lockService.lockGrabbableObject(session.getUser(), object);
+      success = await this.lockService.closeGrabbableObject(session.getRoom(), object);
       if (success) {
         const roomMessage = this.messageFactoryService.makeRoomForwardMessage<AppClosedMessage>(client, message);
         this.publisherService.publishRoomForwardMessage(APP_CLOSED_EVENT, roomMessage);
@@ -316,7 +316,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     const object = session.getRoom().getGrabModifier().getGrabbableObject(message.menuId);
     var success = false;
     if (object) {
-      success = await this.lockService.lockGrabbableObject(session.getUser(), object);
+      success = await this.lockService.closeGrabbableObject(session.getRoom(), object);
       if (success) {
         const roomMessage = this.messageFactoryService.makeRoomForwardMessage<DetachedMenuClosedMessage>(client, message);
         this.publisherService.publishRoomForwardMessage(DETACHED_MENU_CLOSED_EVENT, roomMessage);
