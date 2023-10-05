@@ -1,5 +1,4 @@
 {
-    "messageId": 0,
     "event": "user_positions",
     "controller1": {
         "position": [0, 0, 0],
