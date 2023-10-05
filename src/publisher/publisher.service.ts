@@ -17,7 +17,7 @@ export class PublisherService {
 
     constructor(private readonly redisService: RedisService, private readonly lockService: LockService,
         private readonly roomService: RoomService, private readonly messageFactoryService: MessageFactoryService) {
-            
+
         this.redis = this.redisService.getClient().duplicate();
     }
 
@@ -39,9 +39,9 @@ export class PublisherService {
 
     @Cron(CronExpression.EVERY_10_SECONDS)
     publishTimestampUpdateTimerMessage() {
-        const lock = this.lockService.lockTimestampChannel()
-        if (lock) {
-            for (const room of this.roomService.getRooms()) {
+        for (const room of this.roomService.getRooms()) {
+            const lock = this.lockService.lockTimestampChannel(room)
+            if (lock) {
                 const message: RoomStatusMessage<TimestampUpdateTimerMessage> =
                     { roomId: room.getRoomId(), message: this.messageFactoryService.makeTimestampUpdateTimerMessage(room) };
                 this.publish(TIMESTAMP_UPDATE_TIMER_EVENT, message);

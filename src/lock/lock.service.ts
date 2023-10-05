@@ -6,8 +6,6 @@ import { GrabbableObjectLock } from 'src/util/grabbable-object-lock';
 import { UserModel } from 'src/model/user-model';
 import { Room } from 'src/model/room-model';
 
-const TIMESTAMP_CHANNEL_LOCK = 'timestamp_channel_lock';
-
 @Injectable()
 export class LockService {
 
@@ -54,9 +52,13 @@ export class LockService {
         }
     }
 
-    async lockTimestampChannel() {
+    private getTimestampLockResource(roomId: string): string {
+        return "timestamp-room-" + roomId;
+    }
+
+    async lockTimestampChannel(room: Room) {
         try {
-            return await this.redlock.acquire([TIMESTAMP_CHANNEL_LOCK], Number.MAX_SAFE_INTEGER);
+            return await this.redlock.acquire([this.getTimestampLockResource(room.getRoomId())], Number.MAX_SAFE_INTEGER);
         } catch (error) {
             return null;
         }
