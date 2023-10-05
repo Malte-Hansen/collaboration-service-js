@@ -16,7 +16,7 @@ export class UserModel extends BaseModel {
   private timeOfLastMessage: number;
   private readonly color: Color;
   private hasHighlightedEntity: boolean;
-  private highlightedEntity: HighlightingModel; 
+  private highlightedEntities: HighlightingModel[]; 
 
 
   constructor(id: string, userName: string, color: Color, position: number[], quaternion: number[]) {
@@ -77,11 +77,16 @@ export class UserModel extends BaseModel {
   }
 
   setHighlightedEntity(appId: string, entityType: string, entityId: string): void {
-    this.highlightedEntity = new HighlightingModel(appId, entityId, entityType);
+    this.setHighlighted(true);
+    this.highlightedEntities.push(new HighlightingModel(appId, entityId, entityType));
   }
 
-  getHighlightedEntity(): HighlightingModel {
-    return this.highlightedEntity;
+  getHighlightedEntities(): HighlightingModel[] {
+    return this.highlightedEntities;
+  }
+
+  removeAllHighlightedEntities(): void {
+    this.highlightedEntities = [];
   }
 
 }

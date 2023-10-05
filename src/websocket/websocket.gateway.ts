@@ -3,12 +3,14 @@ import { Server, Socket } from 'socket.io';
 import { MessageFactoryService } from 'src/factory/message-factory/message-factory.service';
 import { IdGenerationService } from 'src/id-generation/id-generation.service';
 import { LockService } from 'src/lock/lock.service';
+import { ALL_HIGHLIGHTS_RESET_EVENT, AllHighlightsResetMessage } from 'src/message/client/receivable/all-highlights-reset-message';
 import { APP_CLOSED_EVENT, AppClosedMessage } from 'src/message/client/receivable/app-closed-message';
 import { APP_OPENED_EVENT, AppOpenedMessage } from 'src/message/client/receivable/app-opened-message';
 import { COMPONENT_UPDATE_EVENT, ComponentUpdateMessage } from 'src/message/client/receivable/component-update-message';
 import { DETACHED_MENU_CLOSED_EVENT, DetachedMenuClosedMessage } from 'src/message/client/receivable/detached-menu-closed-message';
 import { HEATMAP_UPDATE_EVENT, HeatmapUpdateMessage } from 'src/message/client/receivable/heatmap-update-message';
 import { HIGHLIGHTING_UPDATE_EVENT, HighlightingUpdateMessage } from 'src/message/client/receivable/highlighting-update-message';
+import { JOIN_VR_EVENT, JoinVrMessage } from 'src/message/client/receivable/join-vr-message';
 import { MENU_DETACHED_EVENT, MenuDetachedMessage } from 'src/message/client/receivable/menu-detached-message';
 import { MOUSE_PING_UPDATE_EVENT, MousePingUpdateMessage } from 'src/message/client/receivable/mouse-ping-update-message';
 import { OBJECT_GRABBED_EVENT, ObjectGrabbedMessage } from 'src/message/client/receivable/object-grabbed-message';
@@ -222,6 +224,18 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
   handleHighlightingUpdateMessage(@MessageBody() message: HighlightingUpdateMessage, @ConnectedSocket() client: Socket): void {
     const roomMessage = this.messageFactoryService.makeRoomForwardMessage<HighlightingUpdateMessage>(client, message);
     this.publisherService.publishRoomForwardMessage(HIGHLIGHTING_UPDATE_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(ALL_HIGHLIGHTS_RESET_EVENT)
+  handleAllHighlightsResetMessage(@MessageBody() message: AllHighlightsResetMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<AllHighlightsResetMessage>(client, message);
+    this.publisherService.publishRoomForwardMessage(ALL_HIGHLIGHTS_RESET_EVENT, roomMessage);
+  }
+
+  @SubscribeMessage(JOIN_VR_EVENT)
+  handleJoinVrMessage(@MessageBody() message: JoinVrMessage, @ConnectedSocket() client: Socket): void {
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<JoinVrMessage>(client, message);
+    this.publisherService.publishRoomForwardMessage(JOIN_VR_EVENT, roomMessage);
   }
 
   @SubscribeMessage(MOUSE_PING_UPDATE_EVENT)

@@ -22,6 +22,7 @@ export type App = {
 export type DetachedMenu = {
   entityId: string,
   entityType: string,
+  userId: string,
   position: number[],
   quaternion: number[],
   scale: number[]

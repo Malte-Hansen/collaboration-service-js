@@ -5,7 +5,8 @@ export const INITIAL_LANDSCAPE_EVENT = 'landscape';
 export type InitialLandscapeMessage = {
     openApps: InitialApp[],
     landscape: Landscape,
-    detachedMenus: InitialDetachedMenu[]
+    detachedMenus: InitialDetachedMenu[],
+    highlightedExternCommunicationLinks: HighlightingObject[]
 };
 
 export type InitialApp = {
@@ -23,7 +24,8 @@ export type InitialDetachedMenu = {
     entityId: string,
     position: number[],
     quaternion: number[],
-    scale: number[]
+    scale: number[],
+    userId: string
 }
 
 export type HighlightingObject = {
@@ -31,5 +33,6 @@ export type HighlightingObject = {
     appId: string,
     entityType: string,
     entityId: string,
-    highlighted: boolean
+    highlighted: boolean,
+    color: number[]
 }

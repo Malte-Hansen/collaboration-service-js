@@ -46,22 +46,23 @@ export class UserModifier {
     user.setState(isSpectating ? UserState.SPECTATING : UserState.CONNECTED);
   }
 
-  updateHighlighting(user: UserModel, appId: string, entityId: string, entityType: string, isHighlighted: boolean): void {
-    if (!isHighlighted) {
-      user.setHighlighted(false);
-      return;
-    }
-
-    for (const otherUser of this.users.values()) {
-      if (
-        otherUser.containsHighlightedEntity() &&
-        otherUser.getHighlightedEntity().getHighlightedApp() === appId &&
-        otherUser.getHighlightedEntity().getHighlightedEntity() === entityId
-      ) {
-        otherUser.setHighlighted(false);
+  updateHighlighting(user: UserModel, appId: string, entityId: string, entityType: string, isHighlighted: boolean, multiSelected: boolean): void {
+    if (!isHighlighted && !multiSelected) {
+      for (const otherUser of Object.values(this.users)) {
+        otherUser.removeHighlightedEntity(entityId);
       }
+    } else if (!isHighlighted && multiSelected) {
+      for (const highlightingModel of user.getHighlightedEntities()) {
+        for (const otherUser of Object.values(this.users)) {
+          if (otherUser.getId() !== user.getId()) {
+            otherUser.removeHighlightedEntity(highlightingModel.getHighlightedEntity);
+          }
+        }
+      }
+      user.removeAllHighlightedEntities();
+    } else {
+      user.setHighlightedEntity(appId, entityType, entityId);
     }
-    user.setHighlightedEntity(appId, entityType, entityId);
   }
 
   makeUserModel(userId: string, userName: string, colorId: number, position: number[], quaternion: number[]): UserModel {
@@ -75,19 +76,15 @@ export class UserModifier {
 
   addUser(user: UserModel): void {
     this.users.set(user.getId(), user);
-    // TODO user connected event
   }
 
   removeUser(userId: string): void {
     const user = this.users.get(userId);
-    
+
     if (!user) return;
 
     this.colorModifier.unassignColor(user.getColor().colorId);
-    // TODO release grabbed
-
     this.users.delete(userId);
-      // TODO user disconneced event
   }
 
   getUsers(): UserModel[] {
@@ -102,5 +99,9 @@ export class UserModifier {
     return this.users.get(userId);
   }
 
-  // TODO some methods are missing
+  resetAllHighlights() {
+    for (const otherUser of this.users.values()) {
+      otherUser.removeAllHighlightedEntities();
+    }
+  }
 }

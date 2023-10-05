@@ -67,19 +67,49 @@ export class MessageFactoryService {
     }
 
     makeInitialLandscapeMessage(room: Room): InitialLandscapeMessage {
+        const externCommunicationLinks = [];
+
         const appArray: InitialApp[] = [];
         for (const app of room.getApplicationModifier().getApplications()) {
 
             const componentHighlightedArray: HighlightingObject[] = [];
             for (const user of room.getUserModifier().getUsers()) {
                 if (user.containsHighlightedEntity()) {
-                    const highlighted: HighlightingModel = user.getHighlightedEntity();
-                    const highlightingObj: HighlightingObject = {
-                        userId: user.getId(), appId: highlighted.getHighlightedApp(),
-                        entityType: highlighted.getEntityType(), entityId: highlighted.getHighlightedEntity(),
-                        highlighted: true
-                    };
-                    componentHighlightedArray.push(highlightingObj);
+                    const highlighted: HighlightingModel[] = user.getHighlightedEntities();
+
+                    for (const highlightedEntity of highlighted) {
+                        if (highlightedEntity.getHighlightedApp() == app.getId()) {
+                            const highlightingObj: HighlightingObject = {
+                                userId: user.getId(), appId: highlightedEntity.getHighlightedApp(),
+                                entityType: highlightedEntity.getEntityType(), entityId: highlightedEntity.getHighlightedEntity(),
+                                highlighted: true, color: [user.getColor().red, user.getColor().green, user.getColor().blue]
+                            };
+                            componentHighlightedArray.push(highlightingObj);
+                        } else if (highlightedEntity.getHighlightedApp() == "") {
+                            const highlightingObj: HighlightingObject = {
+                                userId: user.getId(), appId: highlightedEntity.getHighlightedApp(),
+                                entityType: highlightedEntity.getEntityType(), entityId: highlightedEntity.getHighlightedEntity(),
+                                highlighted: true, color: [user.getColor().red, user.getColor().green, user.getColor().blue]
+                            };
+                            componentHighlightedArray.push(highlightingObj);
+
+                            var isEntityIdInList = false;
+                            var id = highlightingObj.entityId;
+
+                            for (const externCommunicationLink of externCommunicationLinks) {
+                                if (externCommunicationLink.getEntityId() === id) {
+                                  isEntityIdInList = true;
+                                  break;
+                                }
+                              }
+                              
+                              if (!isEntityIdInList) {
+                                externCommunicationLinks.push(highlightingObj);
+                              }
+                            
+                        }
+
+                    }
                 }
             }
 
@@ -102,12 +132,12 @@ export class MessageFactoryService {
             const menuObj: InitialDetachedMenu = {
                 objectId: menu.getId(), entityId: menu.getDetachId(), position: menu.getPosition(),
                 quaternion: menu.getQuaternion(), entityType: menu.getEntityType(),
-                scale: menu.getScale()
-            }
+                scale: menu.getScale(), userId: menu.getUserId()
+            };
             detachedMenuArray.push(menuObj);
         }
 
-        return { openApps: appArray, landscape: landscapeObj, detachedMenus: detachedMenuArray };
+        return { openApps: appArray, landscape: landscapeObj, detachedMenus: detachedMenuArray, highlightedExternCommunicationLinks: externCommunicationLinks };
 
     }
 

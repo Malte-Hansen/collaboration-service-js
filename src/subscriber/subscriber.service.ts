@@ -27,6 +27,8 @@ import { OBJECT_MOVED_EVENT, ObjectMovedMessage } from 'src/message/client/recei
 import { APP_CLOSED_EVENT, AppClosedMessage } from 'src/message/client/receivable/app-closed-message';
 import { DETACHED_MENU_CLOSED_EVENT, DetachedMenuClosedMessage } from 'src/message/client/receivable/detached-menu-closed-message';
 import { USER_CONNECTED_EVENT, UserConnectedMessage } from 'src/message/client/sendable/user-connected-message';
+import { ALL_HIGHLIGHTS_RESET_EVENT, AllHighlightsResetMessage } from 'src/message/client/receivable/all-highlights-reset-message';
+import { JOIN_VR_EVENT, JoinVrMessage } from 'src/message/client/receivable/join-vr-message';
 
 @Injectable()
 export class SubscriberService {
@@ -49,6 +51,7 @@ export class SubscriberService {
     listener.set(COMPONENT_UPDATE_EVENT, (msg: any) => this.handleComponentUpdateEvent(COMPONENT_UPDATE_EVENT, msg));
     listener.set(HEATMAP_UPDATE_EVENT, (msg: any) => this.handleHeatmapUpdateEvent(HEATMAP_UPDATE_EVENT, msg));
     listener.set(HIGHLIGHTING_UPDATE_EVENT, (msg: any) => this.handleHighlightingUpdateEvent(HIGHLIGHTING_UPDATE_EVENT, msg));
+    listener.set(ALL_HIGHLIGHTS_RESET_EVENT, (msg: any) => this.handleAllHighlightsResetEvent(ALL_HIGHLIGHTS_RESET_EVENT, msg));
     listener.set(MOUSE_PING_UPDATE_EVENT, (msg: any) => this.handleMousePingUpdateEvent(MOUSE_PING_UPDATE_EVENT, msg));
     listener.set(PING_UPDATE_EVENT, (msg: any) => this.handlePingUpdateEvent(PING_UPDATE_EVENT, msg));
     listener.set(SPECTATING_UPDATE_EVENT, (msg: any) => this.handleSpectatingUpdateEvent(SPECTATING_UPDATE_EVENT, msg));
@@ -60,6 +63,7 @@ export class SubscriberService {
     listener.set(OBJECT_MOVED_EVENT, (msg: any) => this.handleObjectMovedEvent(OBJECT_MOVED_EVENT, msg));
     listener.set(APP_CLOSED_EVENT, (msg: any) => this.handleAppClosedEvent(APP_CLOSED_EVENT, msg));
     listener.set(DETACHED_MENU_CLOSED_EVENT, (msg: any) => this.handleDetachedMenuClosedEvent(DETACHED_MENU_CLOSED_EVENT, msg));
+    listener.set(JOIN_VR_EVENT, (msg: any) => this.handleJoinVrEvent(JOIN_VR_EVENT, msg));
 
     // Subscribe channels
     for (var channel of listener.keys()) {
@@ -93,7 +97,7 @@ export class SubscriberService {
 
     // TODO get unique id for detached menus
     for (const detachedMenu of message.initialRoom.detachedMenus) {
-      room.getDetachedMenuModifier().detachMenu(detachedMenu.id, detachedMenu.menu.entityId, detachedMenu.menu.entityType,
+      room.getDetachedMenuModifier().detachMenu(detachedMenu.id, detachedMenu.menu.entityId, detachedMenu.menu.entityType, detachedMenu.menu.userId,
         detachedMenu.menu.position, detachedMenu.menu.quaternion, detachedMenu.menu.scale);
     }
   }
@@ -137,7 +141,7 @@ export class SubscriberService {
   private handleMenuDetachedEvent(event: string, message: RoomForwardMessage<PublishIdMessage<MenuDetachedMessage>>) {
     const room = this.roomService.lookupRoom(message.roomId);
     const menu = message.message.message;
-    room.getDetachedMenuModifier().detachMenu(message.message.id, menu.detachId, menu.entityType,
+    room.getDetachedMenuModifier().detachMenu(message.message.id, menu.detachId, menu.entityType, message.userId,
       menu.position, menu.quaternion, menu.scale);
     const menuDetachedForwardMessage: MenuDetachedForwardMessage = {
       objectId: message.message.id, userId: message.userId, entityType: menu.entityType, detachId: menu.detachId,
@@ -179,7 +183,21 @@ export class SubscriberService {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const user = room.getUserModifier().getUserById(roomMessage.userId);
     const message = roomMessage.message;
-    room.getUserModifier().updateHighlighting(user, message.appId, message.entityId, message.entityType, message.highlighted);
+    room.getUserModifier().updateHighlighting(user, message.appId, message.entityId, message.entityType, message.highlighted, message.multiSelected);
+    this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
+      { userId: roomMessage.userId, originalMessage: message });
+  }
+
+  private handleJoinVrEvent(event: string, roomMessage: RoomForwardMessage<JoinVrMessage>) {
+    const message = roomMessage.message;
+    this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
+      { userId: roomMessage.userId, originalMessage: message });
+  }
+
+  private handleAllHighlightsResetEvent(event: string, roomMessage: RoomForwardMessage<AllHighlightsResetMessage>) {
+    const room = this.roomService.lookupRoom(roomMessage.roomId);
+    const message = roomMessage.message;
+    room.getUserModifier().resetAllHighlights();
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
       { userId: roomMessage.userId, originalMessage: message });
   }

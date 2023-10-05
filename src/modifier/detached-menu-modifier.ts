@@ -14,8 +14,8 @@ export class DetachedMenuModifier {
         return Array.from(this.detachedMenus.values());
     }
 
-    detachMenu(objectId: string, detachId: string, entityType: string, position: number[], quaternion: number[], scale: number[]) {
-        const menu: DetachedMenuModel = new DetachedMenuModel(detachId, entityType, objectId);
+    detachMenu(objectId: string, detachId: string, entityType: string, userId: string, position: number[], quaternion: number[], scale: number[]) {
+        const menu: DetachedMenuModel = new DetachedMenuModel(detachId, entityType, objectId, userId);
         menu.setPosition(position);
         menu.setQuaternion(quaternion);
         menu.setScale(scale);
