@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { RedisModule } from '@liaoliaots/nestjs-redis';
 import { RoomService } from './room/room.service';
 import { IdGenerationService } from './id-generation/id-generation.service';
@@ -26,7 +25,7 @@ import { SubscriberService } from './subscriber/subscriber.service';
     ScheduleModule.forRoot()
 ],
   controllers: [AppController],
-  providers: [AppService, RoomFactoryService, RoomService, WebsocketGateway, 
+  providers: [RoomFactoryService, RoomService, WebsocketGateway, 
     IdGenerationService, TicketService, SessionService, MessageFactoryService, LockService, 
     PublisherService, SubscriberService],
   exports: []

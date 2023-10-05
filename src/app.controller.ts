@@ -1,5 +1,4 @@
 import { Body, Controller, Get, Param, Post, HttpStatus, HttpException } from '@nestjs/common';
-import { AppService } from './app.service';
 import { RoomService } from './room/room.service';
 import { TicketService } from './ticket/ticket.service';
 import { RoomListRecord } from './payload/sendable/room-list';
@@ -14,7 +13,7 @@ import { PublisherService } from './publisher/publisher.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService, private readonly roomService: RoomService, private readonly ticketService: TicketService,
+  constructor(private readonly roomService: RoomService, private readonly ticketService: TicketService,
     private readonly publisherService: PublisherService, private readonly idGenerationService: IdGenerationService) { }
 
   /**
