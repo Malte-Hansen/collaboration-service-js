@@ -64,7 +64,6 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     const ticketId: string = (client.handshake.query.ticketId as string);
     const userName: string = (client.handshake.query.userName as string);
     const mode: VisualizationMode = (client.handshake.query.mode as VisualizationMode);
-    // TODO query params for user position ? 
 
     var ticket: Ticket;
     var room: Room;
@@ -114,7 +113,7 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
 
     this.sessionService.unregister(session);
 
-    // release locks
+    // Release all locks
     this.lockService.releaseAllLockByUser(session.getUser());
     
     const message: UserDisconnectedMessage = { id: session.getUser().getId() };
@@ -128,12 +127,19 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     return roomId + "-vr"
   }
 
-  // SEND EVENT
+  // SEND
 
   private sendUnicastMessage(event: string, client: Socket, message: any): void {
     this.server.to(client.id).emit(event, message);
   }
 
+  /**
+   * Broadcasts a forwarded event to all AR/VR clients within a room. Excludes the intial sender of the message.
+   * 
+   * @param event The event
+   * @param roomId The ID of the room
+   * @param message The message which encapsulated the client-triggered event
+   */
   sendVrOnlyForwardedMessage(event: string, roomId: string, message: ForwardedMessage<any>): void {
     const userId = message.userId;
     const client = this.sessionService.lookupSocket(userId);
@@ -146,6 +152,14 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
   }
 
+  /**
+   * Broadcasts an event to all clients within a room. Excludes the provided user.
+   * 
+   * @param event The event
+   * @param roomId The ID of the room
+   * @param userId The ID of the user
+   * @param message The message which encapsulates event-specific data
+   */
   sendBroadcastExceptOneMessage(event: string, roomId: string, userId: string, message: any): void {
     const client = this.sessionService.lookupSocket(userId);
     if (client) {
@@ -157,24 +171,56 @@ export class WebsocketGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
   }
 
+  /**
+   * Broadcasts an event to all clients within a room.
+   * 
+   * @param event The event
+   * @param roomId The ID of the room
+   * @param message The message which encapsulates event-specific data
+   */
   sendBroadcastMessage(event: string, roomId: string, message: any) {
     this.server.to(roomId).emit(event, message);
   }
 
+  /**
+   * Broadcasts a forwarded event to all clients within a room. Excludes the intial sender of the message.
+   * 
+   * @param event The event
+   * @param roomId The ID of the room
+   * @param message The message which encapsulated the client-triggered event
+   */
   sendBroadcastForwardedMessage(event: string, roomId: string, message: ForwardedMessage<any>): void {
     this.sendBroadcastExceptOneMessage(event, roomId, message.userId, message);
   }
 
+  /**
+   * Sends the current list of users to a client.
+   * 
+   * @param session The session which corresponds to the client
+   */
   sendInitialUserList(session: Session): void  {
     const message = this.messageFactoryService.makeSelfConnectedMessage(session.getRoom(), session.getUser());
     this.sendUnicastMessage(SELF_CONNECTED_EVENT, session.getSocket(), message);
   }
 
+  /**
+   * Sends the current landscape to a client.
+   * 
+   * @param session The session which corresponds to the client
+   */
   sendLandscape(session: Session): void {
     const message = this.messageFactoryService.makeInitialLandscapeMessage(session.getRoom());
     this.sendUnicastMessage(INITIAL_LANDSCAPE_EVENT, session.getSocket(), message);
   }
 
+  /**
+   * Sends a response to a client which corresponds to a previous request event.
+   * 
+   * @param event The event
+   * @param client The client 
+   * @param nonce The Nonce which matches request and response
+   * @param message The message which encapsulates the event-specific data
+   */
   sendResponse(event: string, client: Socket, nonce: number, message: any): void {
     const response: ResponseMessage<any> = { nonce, response: message};
     this.sendUnicastMessage(event, client, response);

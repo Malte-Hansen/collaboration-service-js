@@ -21,14 +21,31 @@ export class PublisherService {
         this.redis = this.redisService.getClient().duplicate();
     }
 
+    /**
+     * Publishes the creation of a room to Redis.
+     * 
+     * @param message The attributes of the created room.
+     */
     publishCreateRoomEvent(message: CreateRoomMessage) {
         this.publish(CREATE_ROOM_EVENT, message);
     }
 
+    /**
+     * Publishes a room-specific, server-triggered event to Redis.
+     * 
+     * @param event The event identifier
+     * @param message The messages which encapsulates event-specific data
+     */
     publishRoomStatusMessage(event: string, message: RoomStatusMessage<any>) {
         this.publish(event, message);
     }
 
+    /**
+     * Publishes a room-specific, client-triggered event to Redis.
+     * 
+     * @param event The event identifier
+     * @param message The messages which encapsulates event-specific data 
+     */
     publishRoomForwardMessage(event: string, message: RoomForwardMessage<any>): void {
         this.publish(event, message);
     }
@@ -37,6 +54,9 @@ export class PublisherService {
         this.redis.publish(channel, JSON.stringify(message));
     }
 
+    /**
+     * Regularly tries to propagate a timestamp in every room. The replicas compete for the exclusive permission.
+     */
     @Cron(CronExpression.EVERY_10_SECONDS)
     publishTimestampUpdateTimerMessage() {
         for (const room of this.roomService.getRooms()) {

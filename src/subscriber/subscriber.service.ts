@@ -40,8 +40,7 @@ export class SubscriberService {
 
     this.redis = this.redisService.getClient().duplicate();
 
-
-    // Register event listener
+    // Register callbacks for Redis notifications
     const listener: Map<string, (...args: any) => void> = new Map();
     listener.set(CREATE_ROOM_EVENT, this.handleCreateRoomEvent.bind(this));
     listener.set(USER_CONNECTED_EVENT, (msg: any) => this.handleUserConnectedEvent(USER_CONNECTED_EVENT, msg));
@@ -65,7 +64,7 @@ export class SubscriberService {
     listener.set(DETACHED_MENU_CLOSED_EVENT, (msg: any) => this.handleDetachedMenuClosedEvent(DETACHED_MENU_CLOSED_EVENT, msg));
     listener.set(JOIN_VR_EVENT, (msg: any) => this.handleJoinVrEvent(JOIN_VR_EVENT, msg));
 
-    // Subscribe channels
+    // Subscribe to Redis channels
     for (var channel of listener.keys()) {
       this.redis.subscribe(channel);
     }
@@ -73,7 +72,7 @@ export class SubscriberService {
     this.redis.on('message', (channel: string, data: string) => {
       const message = JSON.parse(data);
       if (listener.has(channel)) {
-        // call handler method
+        // Invoke event-specific callback
         listener.get(channel)(message);
       }
     });
@@ -83,11 +82,12 @@ export class SubscriberService {
 
   private handleCreateRoomEvent(message: CreateRoomMessage) {
     const publishedLandscape = message.initialRoom.landscape;
+
+    // Initiliaze room and landscape
     const room = this.roomService.createRoom(message.roomId, publishedLandscape.id);
-    //room.getExampleModifier().updateExample(message.initialRoom.example.value);
-    // TODO init model 
     room.getLandscapeModifier().initLandscape(publishedLandscape.landscape.landscapeToken, publishedLandscape.landscape.timestamp);
 
+    // Initialize apps and components
     for (const app of message.initialRoom.openApps) {
       room.getApplicationModifier().openApplication(app.id, app.position, app.quaternion, app.scale);
       for (const componentId of app.openComponents) {
@@ -95,7 +95,7 @@ export class SubscriberService {
       }
     }
 
-    // TODO get unique id for detached menus
+    // Initialize detached menus
     for (const detachedMenu of message.initialRoom.detachedMenus) {
       room.getDetachedMenuModifier().detachMenu(detachedMenu.id, detachedMenu.menu.entityId, detachedMenu.menu.entityType, detachedMenu.menu.userId,
         detachedMenu.menu.position, detachedMenu.menu.quaternion, detachedMenu.menu.scale);
@@ -105,10 +105,9 @@ export class SubscriberService {
   private handleUserConnectedEvent(event: string, roomMessage: RoomStatusMessage<UserConnectedMessage>) {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const message = roomMessage.message;
-
     var user: UserModel;
 
-    // Done, if user was already added by this instance
+    // Done, if user was already added by this replica
     if (!room.getUserModifier().hasUser(message.id)) {
       // Create user 
       user = room.getUserModifier().makeUserModel(message.id, message.name, message.color.colorId, message.position, message.quaternion);
@@ -118,8 +117,6 @@ export class SubscriberService {
     } else {
       user = room.getUserModifier().getUserById(message.id);
     }
-
-    // Inform other users
     this.websocketGateway.sendBroadcastExceptOneMessage(event, roomMessage.roomId, message.id, message);
   }
 
@@ -134,7 +131,6 @@ export class SubscriberService {
     if (room.getUserModifier().getUsers().length == 0) {
       this.roomService.deleteRoom(room.getRoomId());
     }
-
     this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, roomMessage.message);
   }
 

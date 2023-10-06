@@ -13,6 +13,11 @@ export class IdGenerationService {
         this.redis = this.redisService.getClient().duplicate();
     }
 
+    /**
+     * Generates a unique ID among all distributed replicas
+     * 
+     * @returns A unique ID
+     */
     async nextId(): Promise<string> {
         return (await this.getUniqueId()).toString();
     }

@@ -8,7 +8,9 @@ import { LandscapeModifier } from "src/modifier/landscape-modifier";
 import { UserModifier } from "src/modifier/user-modifier";
 
 /**
- * A room is modeled by a collection of modifiers that each manage one particular aspect of the room.
+ * A room is modeled by a collection of modifiers that each manage one particular aspect of the room. 
+ * It represents the local room model of a replica. 
+ * All modifiers do only manipulate the local model and does not interact with other replicas.
  */
 export class Room {
     private readonly roomId: string;

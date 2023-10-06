@@ -17,7 +17,7 @@ export class AppController {
     private readonly publisherService: PublisherService, private readonly idGenerationService: IdGenerationService) { }
 
   /**
-   * Gets the IDs of all rooms.
+   * Gets the IDs of all local rooms.
    */
   @Get("/rooms")
   listRooms(): RoomListRecord[] {
@@ -32,7 +32,8 @@ export class AppController {
   }
 
   /**
-   * Creates a new room with the given initial landscape, applications and detached menus.
+   * Creates a new room with the given initial landscape, applications and detached menus. 
+   * The room is avalailable at all replicas.
    *
    * @param body The initial room layout.
    * @return The ID of the newly created room.
@@ -75,7 +76,7 @@ export class AppController {
    * Adds a user to the lobby of the room with the given ID.
    *
    * @param roomId The ID of the room whose lobby to add the new user to.
-   * @return A ticket ID that can be used to establish a websocket connection.
+   * @return A ticket ID that can be used to establish a websocket connection with any replica.
    */
   @Post("/room/:roomId/lobby")
   async joinLobby(@Param('roomId') roomId: string, @Body() body: JoinLobbyPayload): Promise<LobbyJoinedResponse> {
@@ -83,8 +84,6 @@ export class AppController {
     if (!this.roomService.lookupRoom(roomId)) {
       throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
     }
-
-    // TODO set missing properties
 
     const ticket = await this.ticketService.drawTicket(roomId);
 

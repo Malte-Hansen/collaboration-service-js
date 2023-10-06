@@ -1,6 +1,5 @@
 export type JoinLobbyPayload = {
-  userName: string;
+  //userName: string;
   //position: Position;
   //quaternion: Quaternion;
-  // TODO missing properties
 };

@@ -7,11 +7,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { Redis } from 'ioredis';
 
 /**
- * A service that manages drawn tickets that have not yet been used to establish the websocket
+ * Manages drawn tickets that have not yet been used to establish the websocket
  * connection to join a room.
  *
  * When a user wants to join a room, they first draw a ticket and then use that ticket to establish
  * a websocket connection.
+ * 
+ * Tickets are stored in Redis to be available for all replicas.
  */
 @Injectable()
 export class TicketService {
@@ -32,6 +34,12 @@ export class TicketService {
     private readonly TICKET_EXPIRY_PERIOD_IN_SECONDS = 30;
 
 
+    /**
+     * Generates a new ticket and stores it in Redis.
+     * 
+     * @param roomId The room which should be joined
+     * @returns The ticket
+     */
     async drawTicket(roomId: string): Promise<Ticket> {
         const ticketId = uuidv4();
         const userId = await this.idGenerationService.nextId();
@@ -42,6 +50,12 @@ export class TicketService {
         return ticket;
     }
 
+    /**
+     * Reedems a ticket by the ID. The ticket is looked up at Redis and checked for validity.
+     * 
+     * @param ticketId The ID of the ticket
+     * @returns The ticket
+     */
     async redeemTicket(ticketId: string): Promise<Ticket> {
 
         const ticket = await this.getTicket(ticketId);

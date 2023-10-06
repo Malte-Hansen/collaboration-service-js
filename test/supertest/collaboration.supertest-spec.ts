@@ -23,6 +23,8 @@ import { MENU_DETACHED_RESPONSE_EVENT } from 'src/message/client/sendable/menu-d
 import { OBJECT_CLOSED_RESPONSE_EVENT } from 'src/message/client/sendable/object-closed-response';
 import { SELF_CONNECTED_EVENT } from 'src/message/client/sendable/self-connected-message';
 
+// Firstly, start the app via 'npm run start'. Then, execute the tests via 'npm run test:supertest'.
+
 // config
 const host = process.env.NEST_HOST || 'localhost';
 const port = process.env.NEST_PORT || '4444';
