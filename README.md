@@ -5,7 +5,7 @@ Re-engineered Collaboration Service. The corresponding frontend branch is availa
 ## Installation
 
 - `git clone <repository-url>` this repository
-- `cd collaboration-service-scalable`
+- `cd collaboration-service-js`
 - `npm install`
 
 ## Running / Development
