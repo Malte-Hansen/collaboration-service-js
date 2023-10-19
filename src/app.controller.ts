@@ -11,10 +11,7 @@ import { RoomService } from './room/room.service';
 import { TicketService } from './ticket/ticket.service';
 import { RoomListRecord } from './payload/sendable/room-list';
 import { Room } from './model/room-model';
-import {
-  InitialRoomPayload,
-  Landscape,
-} from './payload/receivable/initial-room';
+import { InitialRoomPayload } from './payload/receivable/initial-room';
 import { RoomCreatedResponse } from './payload/sendable/room-created';
 import { JoinLobbyPayload } from './payload/receivable/join-lobby';
 import { LobbyJoinedResponse } from './payload/sendable/lobby-joined';
@@ -68,16 +65,16 @@ export class AppController {
     const roomId = await this.idGenerationService.nextId();
     const landscapeId = await this.idGenerationService.nextId();
 
-    var detachedMenus: PublishedDetachedMenu[] = [];
-    for (var detachMenu of body.detachedMenus) {
-      var id = await this.idGenerationService.nextId();
+    const detachedMenus: PublishedDetachedMenu[] = [];
+    for (const detachMenu of body.detachedMenus) {
+      const id = await this.idGenerationService.nextId();
       detachedMenus.push({
         id: id,
         menu: detachMenu,
       });
     }
 
-    var landscape: PublishedLandscape = {
+    const landscape: PublishedLandscape = {
       id: landscapeId,
       landscape: body.landscape,
     };
