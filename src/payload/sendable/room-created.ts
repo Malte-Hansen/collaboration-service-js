@@ -3,7 +3,7 @@ export type RoomCreatedResponse = {
 };
 
 export function isRoomCreatedResponse(
-  response: any
+  response: any,
 ): response is RoomCreatedResponse {
   return (
     response !== null &&

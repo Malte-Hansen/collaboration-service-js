@@ -5,4 +5,4 @@ services:
     image: redis:7.2.2
     container_name: redis_dev
     ports:
-      - "6379:6379"
+      - '6379:6379'

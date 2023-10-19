@@ -1,5 +1,5 @@
 {
-    "event": "detached_menu_closed",
-    "menuId": 0,
-    "nonce": 12
+  "event": "detached_menu_closed",
+  "menuId": 0,
+  "nonce": 12
 }

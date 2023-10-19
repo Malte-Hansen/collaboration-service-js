@@ -1,7 +1,7 @@
 {
-    "appId": "332abcc1a7cc39795af8607245095ca828028b6eb8ab6cbbb6fe40634686a844",
-    "componentId": "6908db8f10fe39074ec8e6457e79dd412bd3ea107949403ebadbad2918b9819f",
-    "event": "component_update",
-    "isFoundation": false,
-    "isOpened": false
+  "appId": "332abcc1a7cc39795af8607245095ca828028b6eb8ab6cbbb6fe40634686a844",
+  "componentId": "6908db8f10fe39074ec8e6457e79dd412bd3ea107949403ebadbad2918b9819f",
+  "event": "component_update",
+  "isFoundation": false,
+  "isOpened": false
 }

@@ -11,15 +11,20 @@ export enum UserState {
 
 export class UserModel extends BaseModel {
   private readonly userName: string;
-  private readonly controllers: Map<number,ControllerModel>;
+  private readonly controllers: Map<number, ControllerModel>;
   private state: UserState;
   private timeOfLastMessage: number;
   private readonly color: Color;
   private hasHighlightedEntity: boolean;
-  private highlightedEntities: HighlightingModel[]; 
+  private highlightedEntities: HighlightingModel[];
 
-
-  constructor(id: string, userName: string, color: Color, position: number[], quaternion: number[]) {
+  constructor(
+    id: string,
+    userName: string,
+    color: Color,
+    position: number[],
+    quaternion: number[],
+  ) {
     super(id);
     this.userName = userName;
     this.color = color;
@@ -76,9 +81,15 @@ export class UserModel extends BaseModel {
     this.hasHighlightedEntity = isHighlighted;
   }
 
-  setHighlightedEntity(appId: string, entityType: string, entityId: string): void {
+  setHighlightedEntity(
+    appId: string,
+    entityType: string,
+    entityId: string,
+  ): void {
     this.setHighlighted(true);
-    this.highlightedEntities.push(new HighlightingModel(appId, entityId, entityType));
+    this.highlightedEntities.push(
+      new HighlightingModel(appId, entityId, entityType),
+    );
   }
 
   getHighlightedEntities(): HighlightingModel[] {
@@ -88,5 +99,4 @@ export class UserModel extends BaseModel {
   removeAllHighlightedEntities(): void {
     this.highlightedEntities = [];
   }
-
 }

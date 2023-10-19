@@ -4,7 +4,7 @@ export type LobbyJoinedResponse = {
 };
 
 export function isLobbyJoinedResponse(
-  response: any
+  response: any,
 ): response is LobbyJoinedResponse {
   return (
     response !== null &&

@@ -1,31 +1,30 @@
-import { GrabbableObjectModel } from "src/model/grabbable-object-model";
-import { UserModel } from "src/model/user-model";
+import { GrabbableObjectModel } from 'src/model/grabbable-object-model';
+import { UserModel } from 'src/model/user-model';
 
 export class GrabbableObjectLock {
+  private user: UserModel;
+  private object: GrabbableObjectModel;
+  private lock: any;
 
-    private user: UserModel;
-    private object: GrabbableObjectModel;
-    private lock: any;
+  constructor(user: UserModel, object: GrabbableObjectModel, lock: any) {
+    this.user = user;
+    this.object = object;
+    this.lock = lock;
+  }
 
-    constructor(user: UserModel, object: GrabbableObjectModel, lock: any) {
-        this.user = user;
-        this.object = object;
-        this.lock = lock;
-    }
+  getUser(): UserModel {
+    return this.user;
+  }
 
-    getUser(): UserModel {
-        return this.user;
-    }
+  getObject(): GrabbableObjectModel {
+    return this.object;
+  }
 
-    getObject(): GrabbableObjectModel {
-        return this.object;
-    }
+  getLock(): any {
+    return this.lock;
+  }
 
-    getLock(): any {
-        return this.lock;
-    }
-
-    isLockedByUser(user: UserModel): boolean {
-        return this.user.getId() == user.getId();
-    }
-};
+  isLockedByUser(user: UserModel): boolean {
+    return this.user.getId() == user.getId();
+  }
+}
