@@ -214,7 +214,7 @@ export class SubscriberService {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const user = room.getUserModifier().getUserById(roomMessage.userId);
     const message = roomMessage.message;
-    room.getUserModifier().updateSpectating(user, message.spectating);
+    room.getUserModifier().updateSpectating(user, message.isSpectating);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
       { userId: roomMessage.userId, originalMessage: message });
   }
@@ -254,8 +254,9 @@ export class SubscriberService {
     room.getUserModifier().updateUserPose(user, message.camera);
     room.getUserModifier().updateControllerPose(user.getController(0), message.controller1);
     room.getUserModifier().updateControllerPose(user.getController(1), message.controller2);
-    this.websocketGateway.sendVrOnlyForwardedMessage(event, roomMessage.roomId, 
+    this.websocketGateway.sendUserPositionsMessage(roomMessage.roomId, 
       { userId: roomMessage.userId, originalMessage: message });
+    this.websocketGateway
   }
 
   private handleTimestampUpdateTimerEvent(event: string, roomMessage: RoomStatusMessage<TimestampUpdateTimerMessage>) {
