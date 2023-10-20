@@ -1,7 +1,6 @@
 import { ApplicationModifier } from "src/modifier/application-modifier";
 import { ColorModifier } from "src/modifier/color-modifier";
 import { DetachedMenuModifier } from "src/modifier/detached-menu-modifier";
-import { ExampleModifier } from "src/modifier/example-modifier";
 import { GrabModifier } from "src/modifier/grab-modifier";
 import { HeatmapModifier } from "src/modifier/heatmap-modifier";
 import { LandscapeModifier } from "src/modifier/landscape-modifier";
@@ -16,7 +15,6 @@ export class Room {
     private readonly roomId: string;
     private readonly roomName: string;
     
-    private readonly exampleModifier: ExampleModifier;
     private readonly userModifier: UserModifier;
     private readonly applicationModifier: ApplicationModifier;
     private readonly landscapeModifier: LandscapeModifier;
@@ -25,12 +23,11 @@ export class Room {
     private readonly colorModifier: ColorModifier;
     private readonly grabModifier: GrabModifier;
   
-    constructor(roomId: string, roomName: string, exampleModifier: ExampleModifier, userModifier: UserModifier,
+    constructor(roomId: string, roomName: string, userModifier: UserModifier,
       applicationModifier: ApplicationModifier, landscapeModifier: LandscapeModifier, detachedMenuModifier: DetachedMenuModifier,
       heatmapModifier: HeatmapModifier, colorModifier: ColorModifier, grabModifier: GrabModifier) {
       this.roomId = roomId;
       this.roomName = roomName;
-      this.exampleModifier = exampleModifier;
       this.userModifier = userModifier;
       this.applicationModifier = applicationModifier;
       this.landscapeModifier = landscapeModifier;
@@ -46,10 +43,6 @@ export class Room {
   
     getName(): string {
       return this.roomName;
-    }
-  
-    getExampleModifier(): ExampleModifier {
-      return this.exampleModifier;
     }
 
     getUserModifier(): UserModifier {
