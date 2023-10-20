@@ -26,6 +26,7 @@ export class UserModel extends BaseModel {
     this.controllers = new Map();
     this.setPosition(position);
     this.setQuaternion(quaternion);
+    this.highlightedEntities = [];
   }
 
   getColor(): Color {

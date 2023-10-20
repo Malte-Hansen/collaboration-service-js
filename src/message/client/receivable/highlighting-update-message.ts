@@ -4,6 +4,6 @@ export type HighlightingUpdateMessage = {
     appId: string,
     entityType: string,
     entityId: string,
-    highlighted: boolean,
+    isHighlighted: boolean,
     multiSelected: boolean
 }

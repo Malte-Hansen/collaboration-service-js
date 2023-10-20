@@ -82,14 +82,14 @@ export class MessageFactoryService {
                             const highlightingObj: HighlightingObject = {
                                 userId: user.getId(), appId: highlightedEntity.getHighlightedApp(),
                                 entityType: highlightedEntity.getEntityType(), entityId: highlightedEntity.getHighlightedEntity(),
-                                highlighted: true, color: [user.getColor().red, user.getColor().green, user.getColor().blue]
+                                isHighlighted: true, color: [user.getColor().red, user.getColor().green, user.getColor().blue]
                             };
                             componentHighlightedArray.push(highlightingObj);
                         } else if (highlightedEntity.getHighlightedApp() == "") {
                             const highlightingObj: HighlightingObject = {
                                 userId: user.getId(), appId: highlightedEntity.getHighlightedApp(),
                                 entityType: highlightedEntity.getEntityType(), entityId: highlightedEntity.getHighlightedEntity(),
-                                highlighted: true, color: [user.getColor().red, user.getColor().green, user.getColor().blue]
+                                isHighlighted: true, color: [user.getColor().red, user.getColor().green, user.getColor().blue]
                             };
                             componentHighlightedArray.push(highlightingObj);
 

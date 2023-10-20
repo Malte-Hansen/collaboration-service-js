@@ -159,7 +159,7 @@ export class SubscriberService {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const message = roomMessage.message;
     room.getApplicationModifier().updateComponent(message.componentId, message.appId,
-      message.foundation, message.opened);
+      message.isFoundation, message.isOpened);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
       { userId: roomMessage.userId, originalMessage: message });
   }
@@ -179,7 +179,7 @@ export class SubscriberService {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const user = room.getUserModifier().getUserById(roomMessage.userId);
     const message = roomMessage.message;
-    room.getUserModifier().updateHighlighting(user, message.appId, message.entityId, message.entityType, message.highlighted, message.multiSelected);
+    room.getUserModifier().updateHighlighting(user, message.appId, message.entityId, message.entityType, message.isHighlighted, message.multiSelected);
     this.websocketGateway.sendBroadcastForwardedMessage(event, roomMessage.roomId,
       { userId: roomMessage.userId, originalMessage: message });
   }
