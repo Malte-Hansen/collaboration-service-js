@@ -33,6 +33,6 @@ export type HighlightingObject = {
   appId: string;
   entityType: string;
   entityId: string;
-  highlighted: boolean;
+  isHighlighted: boolean;
   color: number[];
 };

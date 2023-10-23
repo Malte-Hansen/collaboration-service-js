@@ -226,8 +226,24 @@ export class WebsocketGateway
 
   // UTIL
 
+  /**
+   * Gets Socket.IO's room identifier for broadcasting to all AR/VR users of a virtual room.
+   *
+   * @param roomId The ID of the virtual room
+   * @returns Socket.IO's room identifier
+   */
   private getVrRoom(roomId: string): string {
     return roomId + '-vr';
+  }
+
+  /**
+   * Gets Socket.IO's room identifier for broadcasting to all spectating users of a virtual room.
+   *
+   * @param roomId The ID of the virtual room
+   * @returns Socket.IO's room identifier
+   */
+  private getSpectatingRoom(roomId: string): string {
+    return roomId + '-spectating';
   }
 
   // SEND
@@ -238,6 +254,33 @@ export class WebsocketGateway
     message: any,
   ): void {
     this.server.to(client.id).emit(event, message);
+  }
+
+  /**
+   * Broadcasts a user's position to all AR/VR and spectating clients within a room. Excludes the intial sender of the message.
+   *
+   * @param roomId The ID of the room
+   * @param message The message which encapsulated the user's position
+   */
+  sendUserPositionsMessage(
+    roomId: string,
+    message: ForwardedMessage<UserPositionsMessage>,
+  ): void {
+    const userId = message.userId;
+    const client = this.sessionService.lookupSocket(userId);
+    if (client) {
+      // Exclude sender of the message if it is connected to the server
+      client
+        .to(this.getVrRoom(roomId))
+        .to(this.getSpectatingRoom(roomId))
+        .emit(USER_POSITIONS_EVENT, message);
+    } else {
+      // Otherwise send to all clients
+      this.server
+        .to(this.getVrRoom(roomId))
+        .to(this.getSpectatingRoom(roomId))
+        .emit(USER_POSITIONS_EVENT, message);
+    }
   }
 
   /**
@@ -528,6 +571,13 @@ export class WebsocketGateway
     @MessageBody() message: SpectatingUpdateMessage,
     @ConnectedSocket() client: Socket,
   ): void {
+    const session = this.sessionService.lookupSession(client);
+    const roomId = session.getRoom().getRoomId();
+    if (message.isSpectating) {
+      client.join(this.getSpectatingRoom(roomId));
+    } else {
+      client.leave(this.getSpectatingRoom(roomId));
+    }
     const roomMessage =
       this.messageFactoryService.makeRoomForwardMessage<SpectatingUpdateMessage>(
         client,

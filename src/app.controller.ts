@@ -101,7 +101,6 @@ export class AppController {
   @Post('/room/:roomId/lobby')
   async joinLobby(
     @Param('roomId') roomId: string,
-    //@Body() body: JoinLobbyPayload,
   ): Promise<LobbyJoinedResponse> {
     if (!this.roomService.lookupRoom(roomId)) {
       throw new HttpException('Not Found', HttpStatus.NOT_FOUND);

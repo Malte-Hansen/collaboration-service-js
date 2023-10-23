@@ -95,7 +95,7 @@ export class MessageFactoryService {
                 appId: highlightedEntity.getHighlightedApp(),
                 entityType: highlightedEntity.getEntityType(),
                 entityId: highlightedEntity.getHighlightedEntity(),
-                highlighted: true,
+                isHighlighted: true,
                 color: [
                   user.getColor().red,
                   user.getColor().green,
@@ -109,7 +109,7 @@ export class MessageFactoryService {
                 appId: highlightedEntity.getHighlightedApp(),
                 entityType: highlightedEntity.getEntityType(),
                 entityId: highlightedEntity.getHighlightedEntity(),
-                highlighted: true,
+                isHighlighted: true,
                 color: [
                   user.getColor().red,
                   user.getColor().green,

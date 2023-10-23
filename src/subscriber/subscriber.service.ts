@@ -352,8 +352,8 @@ export class SubscriberService {
       .updateComponent(
         message.componentId,
         message.appId,
-        message.foundation,
-        message.opened,
+        message.isFoundation,
+        message.isOpened,
       );
     this.websocketGateway.sendBroadcastForwardedMessage(
       event,
@@ -393,7 +393,7 @@ export class SubscriberService {
         message.appId,
         message.entityId,
         message.entityType,
-        message.highlighted,
+        message.isHighlighted,
         message.multiSelected,
       );
     this.websocketGateway.sendBroadcastForwardedMessage(
@@ -460,7 +460,7 @@ export class SubscriberService {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const user = room.getUserModifier().getUserById(roomMessage.userId);
     const message = roomMessage.message;
-    room.getUserModifier().updateSpectating(user, message.spectating);
+    room.getUserModifier().updateSpectating(user, message.isSpectating);
     this.websocketGateway.sendBroadcastForwardedMessage(
       event,
       roomMessage.roomId,
@@ -532,11 +532,11 @@ export class SubscriberService {
     room
       .getUserModifier()
       .updateControllerPose(user.getController(1), message.controller2);
-    this.websocketGateway.sendVrOnlyForwardedMessage(
-      event,
-      roomMessage.roomId,
-      { userId: roomMessage.userId, originalMessage: message },
-    );
+    this.websocketGateway.sendUserPositionsMessage(roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message,
+    });
+    this.websocketGateway;
   }
 
   private handleTimestampUpdateTimerEvent(
