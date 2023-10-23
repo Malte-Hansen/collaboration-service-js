@@ -44,11 +44,11 @@ export class MessageFactoryService {
       name: userModel.getUserName(),
       color: userModel.getColor(),
     };
-    var otherUsers: OtherUser[] = [];
-    for (var otherModel of room.getUserModifier().getUsers()) {
+    const otherUsers: OtherUser[] = [];
+    for (const otherModel of room.getUserModifier().getUsers()) {
       if (otherModel.getId() == userModel.getId()) continue;
       const otherControllers: Controller[] = [];
-      for (var controllerModel of otherModel.getControllers()) {
+      for (const controllerModel of otherModel.getControllers()) {
         if (controllerModel) {
           const otherController: Controller = {
             controllerId: controllerModel.getControllerId(),
@@ -118,8 +118,8 @@ export class MessageFactoryService {
               };
               componentHighlightedArray.push(highlightingObj);
 
-              var isEntityIdInList = false;
-              var id = highlightingObj.entityId;
+              let isEntityIdInList = false;
+              const id = highlightingObj.entityId;
 
               for (const externCommunicationLink of externCommunicationLinks) {
                 if (externCommunicationLink.getEntityId() === id) {

@@ -22,6 +22,24 @@ import { USER_POSITIONS_EVENT } from 'src/message/client/receivable/user-positio
 import { MENU_DETACHED_RESPONSE_EVENT } from 'src/message/client/sendable/menu-detached-response';
 import { OBJECT_CLOSED_RESPONSE_EVENT } from 'src/message/client/sendable/object-closed-response';
 import { SELF_CONNECTED_EVENT } from 'src/message/client/sendable/self-connected-message';
+import initialRoomPayload = require('./../../test-payload/initial-room.json');
+import joinLobbyPayload = require('./../../test-payload/join-lobby.json');
+import highlightingUpdatePayload = require('./../../test-payload/highlighting-update.json');
+import componentOpenPayload = require('./../../test-payload/component-update-open.json');
+import mousePingPayload = require('./../../test-payload/mouse-ping-update.json');
+import spectatePayload = require('./../../test-payload/spectating-update.json');
+import heatmapPayload = require('./../../test-payload/heatmap-update.json');
+import controllerPingPayload = require('./../../test-payload/ping-update.json');
+import appOpenedPayload = require('./../../test-payload/app-opened.json');
+import appClosedPayload = require('./../../test-payload/app-closed.json');
+import componentClosePayload = require('./../../test-payload/component-update-close.json');
+import timestamtPayload = require('./../../test-payload/timestamp-update.json');
+import menuDetachedPayload = require('./../../test-payload/menu-detached.json');
+import closeMenuDetachedPayload = require('./../../test-payload/detached-menu-closed.json');
+import userPositionsPayload = require('./../../test-payload/user-positions.json');
+import grabObjectPayload = require('./../../test-payload/object-grabbed.json');
+import moveObjectPayload = require('./../../test-payload/object-moved.json');
+import releaseObjectPayload = require('./../../test-payload/object-released.json');
 
 // Firstly, start the app via 'npm run start'. Then, execute the tests via 'npm run test:supertest'.
 
@@ -42,17 +60,17 @@ async function getRooms(): Promise<RoomListRecord[]> {
 }
 
 async function createRoom(): Promise<string> {
-  const payload = require('./../../test-payload/initial-room.json');
-  const response = await request(baseURL).post('/room').send(payload);
+  const response = await request(baseURL)
+    .post('/room')
+    .send(initialRoomPayload);
   return response.body.roomId;
 }
 
 async function createClient(roomId: string): Promise<CollaborationClient> {
-  const payload = require('./../../test-payload/join-lobby.json');
   const response = await request(baseURL)
     .post('/room/' + roomId + '/lobby')
-    .send(payload);
-  var socket = io(baseURL, {
+    .send(joinLobbyPayload);
+  const socket = io(baseURL, {
     transports: ['websocket'],
     query: {
       ticketId: response.body.ticketId,
@@ -60,7 +78,7 @@ async function createClient(roomId: string): Promise<CollaborationClient> {
       mode: 'vr',
     },
   });
-  var id: string;
+  let id: string;
   socket.on(SELF_CONNECTED_EVENT, (msg) => {
     id = msg.self.id;
   });
@@ -77,8 +95,6 @@ function sleep(ms: number) {
 // test
 describe('room', () => {
   it('create room', async () => {
-    const payload = require('./../../test-payload/initial-room.json');
-
     // create room
     const roomId = await createRoom();
 
@@ -91,7 +107,7 @@ describe('room', () => {
     expect(rooms).toContainEqual({
       roomId: roomId,
       roomName: 'Room ' + roomId,
-      landscapeToken: payload.landscape.landscapeToken,
+      landscapeToken: initialRoomPayload.landscape.landscapeToken,
       size: 0,
     });
   });
@@ -122,9 +138,6 @@ describe('room', () => {
 
   it('joining clients receive landscape', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const createRoomPayload = require('./../../test-payload/initial-room.json');
-      const joinLobbyPayload = require('./../../test-payload/join-lobby.json');
-
       // create room
       const roomId = await createRoom();
 
@@ -134,7 +147,7 @@ describe('room', () => {
       const response = await request(baseURL)
         .post('/room/' + roomId + '/lobby')
         .send(joinLobbyPayload);
-      var socket = io(baseURL, {
+      const socket = io(baseURL, {
         transports: ['websocket'],
         query: {
           ticketId: response.body.ticketId,
@@ -145,7 +158,7 @@ describe('room', () => {
 
       socket.on(INITIAL_LANDSCAPE_EVENT, (msg) => {
         // correct landscape was received
-        expect(msg.landscape).toStrictEqual(createRoomPayload.landscape);
+        expect(msg.landscape).toStrictEqual(initialRoomPayload.landscape);
         socket.disconnect();
         resolve();
       });
@@ -160,8 +173,8 @@ describe('room', () => {
 
 describe('collaboration', () => {
   // re-created for each test
-  var client1: CollaborationClient;
-  var client2: CollaborationClient;
+  let client1: CollaborationClient;
+  let client2: CollaborationClient;
 
   beforeEach(async () => {
     const roomId = await createRoom();
@@ -177,19 +190,17 @@ describe('collaboration', () => {
 
   it('highlight component', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/highlighting-update.json');
-
       client2.socket.on(HIGHLIGHTING_UPDATE_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: highlightingUpdatePayload,
         });
         resolve();
       });
 
       // highlight component
-      client1.socket.emit(HIGHLIGHTING_UPDATE_EVENT, message);
+      client1.socket.emit(HIGHLIGHTING_UPDATE_EVENT, highlightingUpdatePayload);
 
       // timeout
       await sleep(500);
@@ -199,19 +210,17 @@ describe('collaboration', () => {
 
   it('open component', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/component-update-open.json');
-
       client2.socket.on(COMPONENT_UPDATE_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: componentOpenPayload,
         });
         resolve();
       });
 
       // open component
-      client1.socket.emit(COMPONENT_UPDATE_EVENT, message);
+      client1.socket.emit(COMPONENT_UPDATE_EVENT, componentOpenPayload);
 
       // timeout
       await sleep(500);
@@ -221,19 +230,17 @@ describe('collaboration', () => {
 
   it('mouse ping', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/mouse-ping-update.json');
-
       client2.socket.on(MOUSE_PING_UPDATE_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: mousePingPayload,
         });
         resolve();
       });
 
       // mouse ping
-      client1.socket.emit(MOUSE_PING_UPDATE_EVENT, message);
+      client1.socket.emit(MOUSE_PING_UPDATE_EVENT, mousePingPayload);
 
       // timeout
       await sleep(500);
@@ -243,21 +250,20 @@ describe('collaboration', () => {
 
   it('update spectating', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/spectating-update.json');
-      message.userId = client1.id;
-      message.spectatedUser = client2.id;
+      spectatePayload.userId = client1.id;
+      spectatePayload.spectatedUser = client2.id;
 
       client2.socket.on(SPECTATING_UPDATE_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: spectatePayload,
         });
         resolve();
       });
 
       // update spectating
-      client1.socket.emit(SPECTATING_UPDATE_EVENT, message);
+      client1.socket.emit(SPECTATING_UPDATE_EVENT, spectatePayload);
 
       // timeout
       await sleep(500);
@@ -267,19 +273,17 @@ describe('collaboration', () => {
 
   it('update heatmap', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/heatmap-update.json');
-
       client2.socket.on(HEATMAP_UPDATE_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: heatmapPayload,
         });
         resolve();
       });
 
       // update heatmap
-      client1.socket.emit(HEATMAP_UPDATE_EVENT, message);
+      client1.socket.emit(HEATMAP_UPDATE_EVENT, heatmapPayload);
 
       // timeout
       await sleep(500);
@@ -289,19 +293,17 @@ describe('collaboration', () => {
 
   it('controller ping', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/ping-update.json');
-
       client2.socket.on(PING_UPDATE_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: controllerPingPayload,
         });
         resolve();
       });
 
       // ping
-      client1.socket.emit(PING_UPDATE_EVENT, message);
+      client1.socket.emit(PING_UPDATE_EVENT, controllerPingPayload);
 
       // timeout
       await sleep(500);
@@ -311,19 +313,17 @@ describe('collaboration', () => {
 
   it('open app', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/app-opened.json');
-
       client2.socket.on(APP_OPENED_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: appOpenedPayload,
         });
         resolve();
       });
 
       // open app
-      client1.socket.emit(APP_OPENED_EVENT, message);
+      client1.socket.emit(APP_OPENED_EVENT, appOpenedPayload);
 
       // timeout
       await sleep(500);
@@ -333,19 +333,17 @@ describe('collaboration', () => {
 
   it('close component', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/component-update-close.json');
-
       client2.socket.on(COMPONENT_UPDATE_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: componentClosePayload,
         });
         resolve();
       });
 
       // close component
-      client1.socket.emit(COMPONENT_UPDATE_EVENT, message);
+      client1.socket.emit(COMPONENT_UPDATE_EVENT, componentClosePayload);
 
       // timeout
       await sleep(500);
@@ -355,19 +353,17 @@ describe('collaboration', () => {
 
   it('update timestamp', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/timestamp-update.json');
-
       client2.socket.on(TIMESTAMP_UPDATE_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: timestamtPayload,
         });
         resolve();
       });
 
       // update timestamp
-      client1.socket.emit(TIMESTAMP_UPDATE_EVENT, message);
+      client1.socket.emit(TIMESTAMP_UPDATE_EVENT, timestamtPayload);
 
       await sleep(500);
       reject(new Error('No message received'));
@@ -375,29 +371,27 @@ describe('collaboration', () => {
   });
 
   it('detach menu', async () => {
-    const message = require('./../../test-payload/menu-detached.json');
-
-    var forwardedObjectId: string;
+    let forwardedObjectId: string;
     client2.socket.on(MENU_DETACHED_EVENT, (msg) => {
       // forwarded attributes are correct
       expect(msg.userId).toStrictEqual(client1.id);
-      expect(msg.detachId).toStrictEqual(message.detachId);
-      expect(msg.entityType).toStrictEqual(message.entityType);
-      expect(msg.position).toStrictEqual(message.position);
-      expect(msg.quaternion).toStrictEqual(message.quaternion);
-      expect(msg.scale).toStrictEqual(message.scale);
+      expect(msg.detachId).toStrictEqual(menuDetachedPayload.detachId);
+      expect(msg.entityType).toStrictEqual(menuDetachedPayload.entityType);
+      expect(msg.position).toStrictEqual(menuDetachedPayload.position);
+      expect(msg.quaternion).toStrictEqual(menuDetachedPayload.quaternion);
+      expect(msg.scale).toStrictEqual(menuDetachedPayload.scale);
       forwardedObjectId = msg.objectId;
     });
 
-    var respondedObjectId: string;
+    let respondedObjectId: string;
     client1.socket.on(MENU_DETACHED_RESPONSE_EVENT, (msg) => {
       // nonce is correct
-      expect(msg.nonce).toStrictEqual(message.nonce);
+      expect(msg.nonce).toStrictEqual(menuDetachedPayload.nonce);
       respondedObjectId = msg.response.objectId;
     });
 
     // detach menu
-    client1.socket.emit(MENU_DETACHED_EVENT, message);
+    client1.socket.emit(MENU_DETACHED_EVENT, menuDetachedPayload);
 
     await sleep(500);
 
@@ -409,34 +403,31 @@ describe('collaboration', () => {
 
   it('close detached menu', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const openMessage = require('./../../test-payload/menu-detached.json');
-      const closeMessage = require('./../../test-payload/detached-menu-closed.json');
-
-      var menuId: string;
+      let menuId: number;
       client1.socket.on(MENU_DETACHED_RESPONSE_EVENT, (msg) => {
         // nonce is correct
-        expect(msg.nonce).toStrictEqual(openMessage.nonce);
+        expect(msg.nonce).toStrictEqual(menuDetachedPayload.nonce);
         menuId = msg.response.objectId;
       });
       client1.socket.on(OBJECT_CLOSED_RESPONSE_EVENT, (msg) => {
         // nonce is correct
-        expect(msg.nonce).toStrictEqual(closeMessage.nonce);
+        expect(msg.nonce).toStrictEqual(closeMenuDetachedPayload.nonce);
         // closing was successful
         expect(msg.response.isSuccess).toStrictEqual(true);
         resolve();
       });
 
       // detach menu
-      client1.socket.emit(MENU_DETACHED_EVENT, openMessage);
+      client1.socket.emit(MENU_DETACHED_EVENT, menuDetachedPayload);
 
       await sleep(500);
 
       // response including menu id were received
       expect(menuId).toBeDefined;
-      closeMessage.menuId = menuId;
+      closeMenuDetachedPayload.menuId = menuId;
 
       // close menu
-      client1.socket.emit(DETACHED_MENU_CLOSED_EVENT, closeMessage);
+      client1.socket.emit(DETACHED_MENU_CLOSED_EVENT, closeMenuDetachedPayload);
 
       // timeout
       await sleep(500);
@@ -446,19 +437,17 @@ describe('collaboration', () => {
 
   it('update user position', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const message = require('./../../test-payload/user-positions.json');
-
       client2.socket.on(USER_POSITIONS_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: message,
+          originalMessage: userPositionsPayload,
         });
         resolve();
       });
 
       // update user position
-      client1.socket.emit(USER_POSITIONS_EVENT, message);
+      client1.socket.emit(USER_POSITIONS_EVENT, userPositionsPayload);
 
       // timeout
       await sleep(500);
@@ -468,26 +457,23 @@ describe('collaboration', () => {
 
   it('move object', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const grabMessage = require('./../../test-payload/object-grabbed.json');
-      const moveMessage = require('./../../test-payload/object-moved.json');
-
-      var isSuccess: boolean;
+      let isSuccess: boolean;
       client1.socket.on(OBJECT_GRABBED_RESPONSE_EVENT, (msg) => {
         // nonce is correct
-        expect(msg.nonce).toStrictEqual(grabMessage.nonce);
+        expect(msg.nonce).toStrictEqual(grabObjectPayload.nonce);
         isSuccess = msg.response.isSuccess;
       });
       client2.socket.on(OBJECT_MOVED_EVENT, (msg) => {
         // forwarded message is correct
         expect(msg).toStrictEqual({
           userId: client1.id,
-          originalMessage: moveMessage,
+          originalMessage: moveObjectPayload,
         });
         resolve();
       });
 
       // grab object
-      client1.socket.emit(OBJECT_GRABBED_EVENT, grabMessage);
+      client1.socket.emit(OBJECT_GRABBED_EVENT, grabObjectPayload);
 
       await sleep(500);
 
@@ -495,7 +481,7 @@ describe('collaboration', () => {
       expect(isSuccess).toStrictEqual(true);
 
       // move object
-      client1.socket.emit(OBJECT_MOVED_EVENT, moveMessage);
+      client1.socket.emit(OBJECT_MOVED_EVENT, moveObjectPayload);
 
       // timeout
       await sleep(500);
@@ -505,9 +491,7 @@ describe('collaboration', () => {
 
   it('object can be grabbed by one user only', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const grabMessage = require('./../../test-payload/object-grabbed.json');
-
-      var isSuccess: boolean;
+      let isSuccess: boolean;
       client1.socket.on(OBJECT_GRABBED_RESPONSE_EVENT, (msg) => {
         isSuccess = msg.response.isSuccess;
       });
@@ -518,7 +502,7 @@ describe('collaboration', () => {
       });
 
       // client1 grabs object
-      client1.socket.emit(OBJECT_GRABBED_EVENT, grabMessage);
+      client1.socket.emit(OBJECT_GRABBED_EVENT, grabObjectPayload);
 
       await sleep(500);
 
@@ -526,7 +510,7 @@ describe('collaboration', () => {
       expect(isSuccess).toStrictEqual(true);
 
       // client2 grabs object
-      client2.socket.emit(OBJECT_GRABBED_EVENT, grabMessage);
+      client2.socket.emit(OBJECT_GRABBED_EVENT, grabObjectPayload);
 
       // timeout
       await sleep(500);
@@ -536,10 +520,7 @@ describe('collaboration', () => {
 
   it('grabbed object cannot be closed', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const grabMessage = require('./../../test-payload/object-grabbed.json');
-      const closeMessage = require('./../../test-payload/app-closed.json');
-
-      var isSuccess: boolean;
+      let isSuccess: boolean;
       client1.socket.on(OBJECT_GRABBED_RESPONSE_EVENT, (msg) => {
         isSuccess = msg.response.isSuccess;
       });
@@ -550,7 +531,7 @@ describe('collaboration', () => {
       });
 
       // client1 grabs object
-      client1.socket.emit(OBJECT_GRABBED_EVENT, grabMessage);
+      client1.socket.emit(OBJECT_GRABBED_EVENT, grabObjectPayload);
 
       await sleep(500);
 
@@ -558,7 +539,7 @@ describe('collaboration', () => {
       expect(isSuccess).toStrictEqual(true);
 
       // client2 closes object
-      client2.socket.emit(APP_CLOSED_EVENT, closeMessage);
+      client2.socket.emit(APP_CLOSED_EVENT, appClosedPayload);
 
       // timeout
       await sleep(500);
@@ -568,16 +549,13 @@ describe('collaboration', () => {
 
   it('released object can be grabbed again', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      const grabMessage = require('./../../test-payload/object-grabbed.json');
-      const releaseMessage = require('./../../test-payload/object-released.json');
-
       // grab object
-      client1.socket.emit(OBJECT_GRABBED_EVENT, grabMessage);
+      client1.socket.emit(OBJECT_GRABBED_EVENT, grabObjectPayload);
 
       await sleep(500);
 
       // release object
-      client1.socket.emit(OBJECT_RELEASED_EVENT, releaseMessage);
+      client1.socket.emit(OBJECT_RELEASED_EVENT, releaseObjectPayload);
 
       await sleep(500);
 
@@ -588,7 +566,7 @@ describe('collaboration', () => {
       });
 
       // grab object again
-      client1.socket.emit(OBJECT_GRABBED_EVENT, grabMessage);
+      client1.socket.emit(OBJECT_GRABBED_EVENT, grabObjectPayload);
 
       // timeout
       await sleep(500);

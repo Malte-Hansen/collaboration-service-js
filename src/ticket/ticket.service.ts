@@ -44,7 +44,7 @@ export class TicketService {
   async drawTicket(roomId: string): Promise<Ticket> {
     const ticketId = uuidv4();
     const userId = await this.idGenerationService.nextId();
-    var validUntil = new Date();
+    const validUntil = new Date();
     validUntil.setSeconds(
       validUntil.getSeconds() + this.TICKET_EXPIRY_PERIOD_IN_SECONDS,
     );

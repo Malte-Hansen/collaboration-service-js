@@ -151,8 +151,8 @@ export class WebsocketGateway
     const mode: VisualizationMode = client.handshake.query
       .mode as VisualizationMode;
 
-    var ticket: Ticket;
-    var room: Room;
+    let ticket: Ticket;
+    let room: Room;
 
     // Redeem ticket
     try {
@@ -612,7 +612,7 @@ export class WebsocketGateway
       .getRoom()
       .getGrabModifier()
       .getGrabbableObject(message.objectId);
-    var success = false;
+    let success = false;
     if (object) {
       success = await this.lockService.lockGrabbableObject(
         session.getRoom(),
@@ -670,7 +670,7 @@ export class WebsocketGateway
       .getRoom()
       .getGrabModifier()
       .getGrabbableObject(message.appId);
-    var success = false;
+    let success = false;
     if (object) {
       success = await this.lockService.closeGrabbableObject(
         session.getRoom(),
@@ -707,7 +707,7 @@ export class WebsocketGateway
       .getRoom()
       .getGrabModifier()
       .getGrabbableObject(message.menuId);
-    var success = false;
+    let success = false;
     if (object) {
       success = await this.lockService.closeGrabbableObject(
         session.getRoom(),

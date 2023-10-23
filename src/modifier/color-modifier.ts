@@ -17,15 +17,15 @@ export class ColorModifier {
     this.colors.set(7, { colorId: 7, red: 241, green: 141, blue: 0 }); // orange
 
     this.counters = new Map();
-    for (var i = 0; i < this.colors.size; i++) {
+    for (let i = 0; i < this.colors.size; i++) {
       this.counters.set(i, 0);
     }
   }
 
   nextColorId(): number {
-    var minCount = Number.MAX_VALUE;
-    var minCountColorId = null;
-    for (var [colorId, count] of this.counters.entries()) {
+    let minCount = Number.MAX_VALUE;
+    let minCountColorId = null;
+    for (const [colorId, count] of this.counters.entries()) {
       if (count < minCount) {
         minCount = count;
         minCountColorId = colorId;
@@ -41,7 +41,7 @@ export class ColorModifier {
   }
 
   unassignColor(colorId: number): void {
-    var count = this.counters.get(colorId);
+    const count = this.counters.get(colorId);
     this.counters.set(colorId, count - 1);
   }
 

@@ -173,7 +173,7 @@ export class SubscriberService {
     );
 
     // Subscribe to Redis channels
-    for (var channel of listener.keys()) {
+    for (const channel of listener.keys()) {
       this.redis.subscribe(channel);
     }
 
@@ -237,7 +237,7 @@ export class SubscriberService {
   ) {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const message = roomMessage.message;
-    var user: UserModel;
+    let user: UserModel;
 
     // Done, if user was already added by this replica
     if (!room.getUserModifier().hasUser(message.id)) {

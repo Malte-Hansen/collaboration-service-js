@@ -125,7 +125,7 @@ export class LockService {
    * @param user The user which releases all locks
    */
   releaseAllLockByUser(user: UserModel): void {
-    for (var [
+    for (const [
       objectId,
       grabbableObjectLock,
     ] of this.grabbableObjectLocks.entries()) {

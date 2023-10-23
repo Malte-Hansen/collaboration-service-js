@@ -13,7 +13,6 @@ import { RoomListRecord } from './payload/sendable/room-list';
 import { Room } from './model/room-model';
 import { InitialRoomPayload } from './payload/receivable/initial-room';
 import { RoomCreatedResponse } from './payload/sendable/room-created';
-import { JoinLobbyPayload } from './payload/receivable/join-lobby';
 import { LobbyJoinedResponse } from './payload/sendable/lobby-joined';
 import { IdGenerationService } from './id-generation/id-generation.service';
 import {
@@ -102,7 +101,7 @@ export class AppController {
   @Post('/room/:roomId/lobby')
   async joinLobby(
     @Param('roomId') roomId: string,
-    @Body() body: JoinLobbyPayload,
+    //@Body() body: JoinLobbyPayload,
   ): Promise<LobbyJoinedResponse> {
     if (!this.roomService.lookupRoom(roomId)) {
       throw new HttpException('Not Found', HttpStatus.NOT_FOUND);
