@@ -1,4 +1,4 @@
-import { GrabbableObjectModel } from "src/model/grabbable-object-model";
+import { GrabbableObjectModel } from 'src/model/grabbable-object-model';
 
 export class GrabModifier {
   private grabbableObjects: Map<string, GrabbableObjectModel> = new Map();
@@ -11,8 +11,14 @@ export class GrabModifier {
     this.grabbableObjects.delete(object.getGrabId());
   }
 
-  moveObject(objectId: string, position: number[], quaternion: number[], scale: number[]): void {
-    const object: GrabbableObjectModel | undefined = this.grabbableObjects.get(objectId);
+  moveObject(
+    objectId: string,
+    position: number[],
+    quaternion: number[],
+    scale: number[],
+  ): void {
+    const object: GrabbableObjectModel | undefined =
+      this.grabbableObjects.get(objectId);
     if (object) {
       object.setPosition(position);
       object.setQuaternion(quaternion);
@@ -20,8 +26,7 @@ export class GrabModifier {
     }
   }
 
-  getGrabbableObject(objectId: string): GrabbableObjectModel|null {
+  getGrabbableObject(objectId: string): GrabbableObjectModel | null {
     return this.grabbableObjects.get(objectId);
   }
-
 }

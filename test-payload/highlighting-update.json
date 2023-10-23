@@ -1,7 +1,7 @@
 {
-    "appId": "71507f5304a03c29c431b61bec407ab47a97cf4e3af6b470575273edc02fbc92",
-    "entityId": "1b156fdb633f5cdf51a5ffa8ab2ac9080765a6c4a37d27fae48a8989d3b742de",
-    "entityType": "s",
-    "event": "highlighting_update",
-    "isHighlighted": true
+  "appId": "71507f5304a03c29c431b61bec407ab47a97cf4e3af6b470575273edc02fbc92",
+  "entityId": "1b156fdb633f5cdf51a5ffa8ab2ac9080765a6c4a37d27fae48a8989d3b742de",
+  "entityType": "s",
+  "event": "highlighting_update",
+  "isHighlighted": true
 }

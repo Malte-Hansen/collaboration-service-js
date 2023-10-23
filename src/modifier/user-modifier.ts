@@ -1,12 +1,11 @@
-import { ControllerModel } from "src/model/controller-model";
-import { UserState, UserModel } from "src/model/user-model";
-import { Controller } from "src/util/controller";
-import { ControllerPose } from "src/util/controller";
-import { Pose } from "src/util/pose";
-import { ColorModifier } from "./color-modifier";
+import { ControllerModel } from 'src/model/controller-model';
+import { UserState, UserModel } from 'src/model/user-model';
+import { Controller } from 'src/util/controller';
+import { ControllerPose } from 'src/util/controller';
+import { Pose } from 'src/util/pose';
+import { ColorModifier } from './color-modifier';
 
 export class UserModifier {
-
   private users: Map<string, UserModel> = new Map();
 
   private readonly colorModifier: ColorModifier;
@@ -22,7 +21,10 @@ export class UserModifier {
     }
   }
 
-  updateControllerPose(controller: ControllerModel, pose: ControllerPose): void {
+  updateControllerPose(
+    controller: ControllerModel,
+    pose: ControllerPose,
+  ): void {
     if (controller && pose) {
       controller.setPosition(pose.position);
       controller.setQuaternion(pose.quaternion);
@@ -31,7 +33,11 @@ export class UserModifier {
   }
 
   connectController(uniqueId: string, user: UserModel, controller: Controller) {
-    const controllerModel = this.makeControllerModel(uniqueId, controller.controllerId, controller.assetUrl);
+    const controllerModel = this.makeControllerModel(
+      uniqueId,
+      controller.controllerId,
+      controller.assetUrl,
+    );
     controllerModel.setPosition(controller.position);
     controllerModel.setQuaternion(controller.quaternion);
     controllerModel.setIntersection(controller.intersection);
@@ -46,7 +52,14 @@ export class UserModifier {
     user.setState(isSpectating ? UserState.SPECTATING : UserState.CONNECTED);
   }
 
-  updateHighlighting(user: UserModel, appId: string, entityId: string, entityType: string, isHighlighted: boolean, multiSelected: boolean): void {
+  updateHighlighting(
+    user: UserModel,
+    appId: string,
+    entityId: string,
+    entityType: string,
+    isHighlighted: boolean,
+    multiSelected: boolean,
+  ): void {
     if (!isHighlighted && !multiSelected) {
       for (const otherUser of Object.values(this.users)) {
         otherUser.removeHighlightedEntity(entityId);
@@ -55,7 +68,9 @@ export class UserModifier {
       for (const highlightingModel of user.getHighlightedEntities()) {
         for (const otherUser of Object.values(this.users)) {
           if (otherUser.getId() !== user.getId()) {
-            otherUser.removeHighlightedEntity(highlightingModel.getHighlightedEntity);
+            otherUser.removeHighlightedEntity(
+              highlightingModel.getHighlightedEntity,
+            );
           }
         }
       }
@@ -65,12 +80,22 @@ export class UserModifier {
     }
   }
 
-  makeUserModel(userId: string, userName: string, colorId: number, position: number[], quaternion: number[]): UserModel {
+  makeUserModel(
+    userId: string,
+    userName: string,
+    colorId: number,
+    position: number[],
+    quaternion: number[],
+  ): UserModel {
     const color = this.colorModifier.assignColor(colorId);
     return new UserModel(userId, userName, color, position, quaternion);
   }
 
-  makeControllerModel(id: string, controllerId: number, assetUrl: string): ControllerModel {
+  makeControllerModel(
+    id: string,
+    controllerId: number,
+    assetUrl: string,
+  ): ControllerModel {
     return new ControllerModel(id, controllerId, assetUrl);
   }
 

@@ -1,11 +1,11 @@
-import { Color } from "src/util/color";
+import { Color } from 'src/util/color';
 
 export const USER_CONNECTED_EVENT = 'user_connected';
 
 export type UserConnectedMessage = {
-    id: string,
-    name: string,
-    color: Color,
-    position: number[],
-    quaternion: number[]
-}
+  id: string;
+  name: string;
+  color: Color;
+  position: number[];
+  quaternion: number[];
+};

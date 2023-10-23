@@ -22,4 +22,3 @@ Re-engineered Collaboration Service. The corresponding frontend branch is availa
 ## Building
 
 - Execute `npm run build`
-

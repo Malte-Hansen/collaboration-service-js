@@ -1,4 +1,4 @@
 export type Pose = {
-    position: number[],
-    quaternion: number[]
-}
+  position: number[];
+  quaternion: number[];
+};

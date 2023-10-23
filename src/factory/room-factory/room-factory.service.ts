@@ -10,27 +10,27 @@ import { UserModifier } from 'src/modifier/user-modifier';
 
 @Injectable()
 export class RoomFactoryService {
+  constructor() {}
 
-    constructor() {}
+  makeRoom(roomId: string, roomName: string, landscapeId: string): Room {
+    const grabModifier = new GrabModifier();
+    const colorModifier = new ColorModifier();
+    const userModifier = new UserModifier(colorModifier);
+    const landscapeModifier = new LandscapeModifier(landscapeId, grabModifier);
+    const detachedMenuModifier = new DetachedMenuModifier(grabModifier);
+    const heatmapModifier = new HeatmapModifier();
+    const applicationModifier = new ApplicationModifier(grabModifier);
 
-    makeRoom(roomId: string, roomName: string, landscapeId: string): Room {
-        const grabModifier = new GrabModifier();
-        const colorModifier = new ColorModifier();
-        const userModifier = new UserModifier(colorModifier);
-        const landscapeModifier = new LandscapeModifier(landscapeId, grabModifier);
-        const detachedMenuModifier = new DetachedMenuModifier(grabModifier);
-        const heatmapModifier = new HeatmapModifier();
-        const applicationModifier = new ApplicationModifier(grabModifier)
-        
-        return new Room(
-            roomId, 
-            roomName,
-            userModifier,
-            applicationModifier,
-            landscapeModifier,
-            detachedMenuModifier,
-            heatmapModifier,
-            colorModifier,
-            grabModifier)
-    }
+    return new Room(
+      roomId,
+      roomName,
+      userModifier,
+      applicationModifier,
+      landscapeModifier,
+      detachedMenuModifier,
+      heatmapModifier,
+      colorModifier,
+      grabModifier,
+    );
+  }
 }

@@ -1,17 +1,17 @@
 {
-    "event": "user_positions",
-    "controller1": {
-        "position": [0, 0, 0],
-        "quaternion": [0, 0, 0, 0],
-        "intersection": [0, 0, 0]
-    },
-    "controller2": {
-        "position": [0, 0, 0],
-        "quaternion": [0, 0, 0, 0],
-        "intersection": [0, 0, 0]
-    },
-    "camera": {
-        "position": [0, 0, 0],
-        "quaternion": [0, 0, 0, 0]
-    }
+  "event": "user_positions",
+  "controller1": {
+    "position": [0, 0, 0],
+    "quaternion": [0, 0, 0, 0],
+    "intersection": [0, 0, 0]
+  },
+  "controller2": {
+    "position": [0, 0, 0],
+    "quaternion": [0, 0, 0, 0],
+    "intersection": [0, 0, 0]
+  },
+  "camera": {
+    "position": [0, 0, 0],
+    "quaternion": [0, 0, 0, 0]
+  }
 }

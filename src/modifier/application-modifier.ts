@@ -1,5 +1,5 @@
-import { ApplicationModel } from "src/model/application-model";
-import { GrabModifier } from "./grab-modifier";
+import { ApplicationModel } from 'src/model/application-model';
+import { GrabModifier } from './grab-modifier';
 
 export class ApplicationModifier {
   private openApplications: Map<string, ApplicationModel> = new Map();
@@ -14,7 +14,12 @@ export class ApplicationModifier {
     return Array.from(this.openApplications.values());
   }
 
-  openApplication(appId: string, position: number[], quaternion: number[], scale: number[]): void {
+  openApplication(
+    appId: string,
+    position: number[],
+    quaternion: number[],
+    scale: number[],
+  ): void {
     const appModel = this.getOrCreateApplication(appId);
     appModel.setPosition(position);
     appModel.setQuaternion(quaternion);
@@ -37,7 +42,12 @@ export class ApplicationModifier {
     this.openApplications.clear();
   }
 
-  updateComponent(componentId: string, appId: string, isFoundation: boolean, isOpened: boolean): void {
+  updateComponent(
+    componentId: string,
+    appId: string,
+    isFoundation: boolean,
+    isOpened: boolean,
+  ): void {
     const appModel = this.getOrCreateApplication(appId);
     if (isFoundation) {
       appModel.closeAllComponents();

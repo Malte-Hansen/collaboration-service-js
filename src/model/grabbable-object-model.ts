@@ -1,16 +1,15 @@
 export interface GrabbableObjectModel {
-    
-    getGrabId(): string;
+  getGrabId(): string;
 
-    getPosition(): number[];
+  getPosition(): number[];
 
-    setPosition(position: number[]): void;
+  setPosition(position: number[]): void;
 
-    getQuaternion(): number[];
+  getQuaternion(): number[];
 
-    setQuaternion(quaternion: number[]): void;
+  setQuaternion(quaternion: number[]): void;
 
-    getScale(): number[];
+  getScale(): number[];
 
-    setScale(scale: number[]): void;
+  setScale(scale: number[]): void;
 }
