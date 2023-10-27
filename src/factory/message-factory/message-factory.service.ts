@@ -78,7 +78,7 @@ export class MessageFactoryService {
   }
 
   makeInitialLandscapeMessage(room: Room): InitialLandscapeMessage {
-    const externCommunicationLinks = [];
+    const externCommunicationLinks: HighlightingObject[] = [];
 
     const appArray: InitialApp[] = [];
     for (const app of room.getApplicationModifier().getApplications()) {
@@ -122,7 +122,7 @@ export class MessageFactoryService {
               const id = highlightingObj.entityId;
 
               for (const externCommunicationLink of externCommunicationLinks) {
-                if (externCommunicationLink.getEntityId() === id) {
+                if (externCommunicationLink.entityId === id) {
                   isEntityIdInList = true;
                   break;
                 }
