@@ -214,7 +214,8 @@ export class WebsocketGateway
     // Release all locks
     this.lockService.releaseAllLockByUser(session.getUser());
 
-    const message: UserDisconnectedMessage = { id: session.getUser().getId() };
+    const message: UserDisconnectedMessage = { id: session.getUser().getId(), 
+      highlightedComponents: session.getUser().getHighlightedEntities()};
     this.publisherService.publishRoomStatusMessage(
       USER_DISCONNECTED_EVENT,
       this.messageFactoryService.makeRoomStatusMessage(
