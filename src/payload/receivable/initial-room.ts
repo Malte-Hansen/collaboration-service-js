@@ -1,4 +1,5 @@
 export type InitialRoomPayload = {
+  roomId: string;
   landscape: Landscape;
   openApps: App[];
   detachedMenus: DetachedMenu[];

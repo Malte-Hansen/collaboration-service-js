@@ -52,6 +52,7 @@ export class AppController {
 
   /**
    * Creates a new room with the given initial landscape, applications and detached menus.
+   * Alternatively returns the ID of an existing room if the given ID is already in use.
    * The room is avalailable at all replicas.
    *
    * @param body The initial room layout.
@@ -61,7 +62,14 @@ export class AppController {
   async addRoom(
     @Body() body: InitialRoomPayload,
   ): Promise<RoomCreatedResponse> {
-    const roomId = await this.idGenerationService.nextId();
+    const roomId = body.roomId
+      ? body.roomId
+      : await this.idGenerationService.nextId();
+
+    if (this.roomService.lookupRoom(roomId)) {
+      return { roomId };
+    }
+
     const landscapeId = await this.idGenerationService.nextId();
 
     const detachedMenus: PublishedDetachedMenu[] = [];
@@ -87,7 +95,7 @@ export class AppController {
       },
     });
 
-    const roomCreatedResponse: RoomCreatedResponse = { roomId: roomId };
+    const roomCreatedResponse: RoomCreatedResponse = { roomId };
 
     return roomCreatedResponse;
   }
