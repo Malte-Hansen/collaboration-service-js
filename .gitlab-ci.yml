@@ -1,26 +1,90 @@
-image: node:18
+default:
+  tags:
+   - exec-docker 
+  image: node:latest
+  cache:  # Cache modules in between jobs
+    key: $CI_COMMIT_REF_SLUG
+    paths:
+      - .npm/
+  before_script:
+    - npm ci --cache .npm --prefer-offline
 
-services:
-  - name: redis:latest
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+    - if: '$CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - if: '$CI_COMMIT_BRANCH'
 
 stages:
   - build
   - test
-
-variables:
-  REDIS_HOST: redis
-
-before_script:
-  - npm install
+  - deploy:images
+  - deploy:retagging
 
 build:
   stage: build
   script:
     - npm run build
+  artifacts:
+    expire_in: 1h
+    paths:
+      - node_modules
+      - dist
 
 test:
   stage: test
+  variables:
+    REDIS_HOST: redis
+    REDIS_PORT: '6379'
+  services:
+    - name: redis:latest
   script:
     - npm run start &
     - sleep 10
     - npm run test:supertest
+
+.deploy-to-dockerhub:
+  stage: deploy:images
+  before_script: []
+  cache: []
+  variables:
+    DOCKERHUB_IMAGE_NAME: 'collaboration-service-js'
+    DOCKERHUB_TAG: 'latest'
+  image:
+    name: gcr.io/kaniko-project/executor:debug
+    entrypoint: ['']
+  script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$EXPLORVIZ_CI_REGISTRY_KANIKO\":{\"auth\":\"$(echo -n ${EXPLORVIZ_DOCKERHUB_USERNAME}:${EXPLORVIZ_DOCKERHUB_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context=$CI_PROJECT_DIR --dockerfile=$CI_PROJECT_DIR/Dockerfile --destination=$EXPLORVIZ_DOCKERHUB_ORGA/$DOCKERHUB_IMAGE_NAME:$DOCKERHUB_TAG
+
+deploy-dockerhub-main:
+  extends:
+    - .deploy-to-dockerhub
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == "main"'
+
+deploy-dockerhub-mr:
+  variables:
+    DOCKERHUB_TAG: $CI_COMMIT_SHORT_SHA
+  extends:
+    - .deploy-to-dockerhub
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
+
+retag-dockerhub-image:
+  stage: deploy:retagging
+  before_script: []
+  cache: []
+  rules:
+    - if: '($CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main") && $CI_PIPELINE_SOURCE == "push"'
+  image:
+    name: gcr.io/go-containerregistry/crane:debug
+    entrypoint: ['']
+  variables:
+    DOCKERHUB_IMAGE_NAME: 'collaboration-service-js'
+    DOCKERHUB_TAG: 'latest'
+  script:
+    - crane auth login -u $EXPLORVIZ_DOCKERHUB_USERNAME -p $EXPLORVIZ_DOCKERHUB_PASSWORD "index.docker.io"
+    - crane cp $EXPLORVIZ_DOCKERHUB_ORGA/$DOCKERHUB_IMAGE_NAME:$DOCKERHUB_TAG $EXPLORVIZ_DOCKERHUB_ORGA/$DOCKERHUB_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
