@@ -459,9 +459,12 @@ export class SubscriberService {
     roomMessage: RoomForwardMessage<SpectatingUpdateMessage>,
   ) {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
-    const user = room.getUserModifier().getUserById(roomMessage.userId);
     const message = roomMessage.message;
-    room.getUserModifier().updateSpectating(user, message.isSpectating);
+    message.spectatingUsers.forEach((spectatingUserId) => {
+      const user = room.getUserModifier().getUserById(spectatingUserId);
+      room.getUserModifier().updateSpectating(user, message.isSpectating);
+    });
+
     this.websocketGateway.sendBroadcastForwardedMessage(
       event,
       roomMessage.roomId,

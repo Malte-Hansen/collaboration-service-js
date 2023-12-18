@@ -585,11 +585,23 @@ export class WebsocketGateway
   ): void {
     const session = this.sessionService.lookupSession(client);
     const roomId = session.getRoom().getRoomId();
+
+    // Put spectating clients in a special room since those should receive positional updates
+    const spectatingClients: Socket[] = [];
+    message.spectatingUsers.forEach((userId) => {
+      spectatingClients.push(this.sessionService.lookupSocket(userId));
+    });
+
     if (message.isSpectating) {
-      client.join(this.getSpectatingRoom(roomId));
+      spectatingClients.forEach((spectatingClient) => {
+        spectatingClient.join(this.getSpectatingRoom(roomId));
+      });
     } else {
-      client.leave(this.getSpectatingRoom(roomId));
+      spectatingClients.forEach((spectatingClient) => {
+        spectatingClient.leave(this.getSpectatingRoom(roomId));
+      });
     }
+
     const roomMessage =
       this.messageFactoryService.makeRoomForwardMessage<SpectatingUpdateMessage>(
         client,
