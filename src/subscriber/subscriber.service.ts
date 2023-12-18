@@ -247,6 +247,7 @@ export class SubscriberService {
         .makeUserModel(
           message.id,
           message.name,
+          message.deviceId || '',
           message.color.colorId,
           message.position,
           message.quaternion,

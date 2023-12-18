@@ -148,6 +148,7 @@ export class WebsocketGateway
     // Query params
     const ticketId: string = client.handshake.query.ticketId as string;
     const userName: string = client.handshake.query.userName as string;
+    const deviceId: string = client.handshake.query.deviceId as string;
     const mode: VisualizationMode = client.handshake.query
       .mode as VisualizationMode;
 
@@ -168,7 +169,14 @@ export class WebsocketGateway
     const colorId = room.getColorModifier().nextColorId();
     const user = room
       .getUserModifier()
-      .makeUserModel(ticket.userId, userName, colorId, [0, 0, 0], [0, 0, 0, 0]);
+      .makeUserModel(
+        ticket.userId,
+        userName,
+        deviceId,
+        colorId,
+        [0, 0, 0],
+        [0, 0, 0, 0],
+      );
     room.getUserModifier().addUser(user);
     const roomMessage =
       this.messageFactoryService.makeRoomStatusMessage<UserConnectedMessage>(
@@ -176,6 +184,7 @@ export class WebsocketGateway
         {
           id: user.getId(),
           name: user.getUserName(),
+          deviceId: user.getDeviceId(),
           color: user.getColor(),
           position: user.getPosition(),
           quaternion: user.getQuaternion(),
@@ -214,8 +223,10 @@ export class WebsocketGateway
     // Release all locks
     this.lockService.releaseAllLockByUser(session.getUser());
 
-    const message: UserDisconnectedMessage = { id: session.getUser().getId(), 
-      highlightedComponents: session.getUser().getHighlightedEntities()};
+    const message: UserDisconnectedMessage = {
+      id: session.getUser().getId(),
+      highlightedComponents: session.getUser().getHighlightedEntities(),
+    };
     this.publisherService.publishRoomStatusMessage(
       USER_DISCONNECTED_EVENT,
       this.messageFactoryService.makeRoomStatusMessage(
