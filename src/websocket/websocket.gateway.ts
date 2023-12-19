@@ -589,7 +589,7 @@ export class WebsocketGateway
 
     // Put spectating clients in a special room since those should receive positional updates
     const spectatingClients: Socket[] = [];
-    message.spectatingUsers.forEach((userId) => {
+    message.spectatingUserIds.forEach((userId) => {
       spectatingClients.push(this.sessionService.lookupSocket(userId));
     });
 

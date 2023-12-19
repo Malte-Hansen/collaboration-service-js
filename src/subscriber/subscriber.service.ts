@@ -460,7 +460,7 @@ export class SubscriberService {
   ) {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const message = roomMessage.message;
-    message.spectatingUsers.forEach((spectatingUserId) => {
+    message.spectatingUserIds.forEach((spectatingUserId) => {
       const user = room.getUserModifier().getUserById(spectatingUserId);
       room.getUserModifier().updateSpectating(user, message.isSpectating);
     });
