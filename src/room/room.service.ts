@@ -25,7 +25,6 @@ export class RoomService {
       landscapeId,
     );
     this.rooms.set(roomId, room);
-    console.log('Created room ', roomId);
     return room;
   }
 

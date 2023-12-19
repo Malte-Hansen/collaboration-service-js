@@ -465,11 +465,10 @@ export class SubscriberService {
       room.getUserModifier().updateSpectating(user, message.isSpectating);
     });
 
-    this.websocketGateway.sendBroadcastForwardedMessage(
-      event,
-      roomMessage.roomId,
-      { userId: roomMessage.userId, originalMessage: message },
-    );
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message,
+    });
   }
 
   private handleTimestampUpdateEvent(

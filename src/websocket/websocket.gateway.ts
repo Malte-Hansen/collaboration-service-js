@@ -124,6 +124,7 @@ import { TicketService } from 'src/ticket/ticket.service';
 import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
 import { VisualizationMode } from 'src/util/visualization-mode';
+import * as fs from 'node:fs';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway
@@ -602,11 +603,21 @@ export class WebsocketGateway
       });
     }
 
+    const spectateConfig: { deviceId: string; projectionMatrix: number[] }[] =
+      JSON.parse(
+        fs.readFileSync(
+          'src/config/spectate/' + message.configurationId + '.json',
+          'utf8',
+        ),
+      );
+    message.configuration = spectateConfig;
+
     const roomMessage =
       this.messageFactoryService.makeRoomForwardMessage<SpectatingUpdateMessage>(
         client,
         message,
       );
+
     this.publisherService.publishRoomForwardMessage(
       SPECTATING_UPDATE_EVENT,
       roomMessage,
