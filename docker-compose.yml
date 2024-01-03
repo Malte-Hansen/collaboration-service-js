@@ -10,9 +10,17 @@ services:
       - REDIS_PORT=6379
 
   redis:
+    container_name: redis-collab-local
     image: redis:7.2.2
     ports:
       - '6379:6379'
+
+  demo-supplier:
+    container_name: explorviz-demo-supplier-collab
+    image: explorviz/demo-supplier
+    ports:
+      - 8083:8083
+      - 8084:8084
 
 networks:
   default:
