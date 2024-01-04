@@ -1,27 +1,8 @@
-version: '3.9'
+version: '3.8'
 
 services:
-  collaboration-service-js:
-    image: collab-service-js-local
-    ports:
-      - 4444:4444
-    environment:
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-
   redis:
-    container_name: redis-collab-local
     image: redis:7.2.2
+    container_name: redis_dev
     ports:
       - '6379:6379'
-
-  demo-supplier:
-    container_name: explorviz-demo-supplier-collab
-    image: explorviz/demo-supplier
-    ports:
-      - 8083:8083
-      - 8084:8084
-
-networks:
-  default:
-    name: explorviz
