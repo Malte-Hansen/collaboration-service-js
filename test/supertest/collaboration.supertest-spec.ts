@@ -250,12 +250,12 @@ describe('collaboration', () => {
 
   it('update spectating', async () => {
     return new Promise<void>(async (resolve, reject) => {
-      spectatePayload.userId = client1.id;
+      spectatePayload.spectatingUserIds = [client1.id];
       spectatePayload.spectatedUserId = client2.id;
 
       client2.socket.on(SPECTATING_UPDATE_EVENT, (msg) => {
         // forwarded message is correct
-        expect(msg).toStrictEqual({
+        expect(msg).toMatchObject({
           userId: client1.id,
           originalMessage: spectatePayload,
         });
