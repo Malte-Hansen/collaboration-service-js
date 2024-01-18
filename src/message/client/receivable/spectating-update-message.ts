@@ -1,7 +1,9 @@
 export const SPECTATING_UPDATE_EVENT = 'spectating_update';
 
 export type SpectatingUpdateMessage = {
-  userId: string;
   isSpectating: boolean;
-  spectatedUser: string;
+  spectatedUserId: string;
+  spectatingUserIds: string[];
+  configurationId: string;
+  configuration: { deviceId: string; projectionMatrix: number[] }[] | null;
 };

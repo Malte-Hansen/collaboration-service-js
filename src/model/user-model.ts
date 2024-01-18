@@ -11,6 +11,7 @@ export enum UserState {
 
 export class UserModel extends BaseModel {
   private readonly userName: string;
+  private readonly deviceId: string;
   private readonly controllers: Map<number, ControllerModel>;
   private state: UserState;
   private timeOfLastMessage: number;
@@ -21,12 +22,14 @@ export class UserModel extends BaseModel {
   constructor(
     id: string,
     userName: string,
+    deviceId: string,
     color: Color,
     position: number[],
     quaternion: number[],
   ) {
     super(id);
     this.userName = userName;
+    this.deviceId = deviceId;
     this.color = color;
     this.controllers = new Map();
     this.setPosition(position);
@@ -48,6 +51,10 @@ export class UserModel extends BaseModel {
 
   getUserName(): string {
     return this.userName;
+  }
+
+  getDeviceId(): string {
+    return this.deviceId;
   }
 
   getControllers(): ControllerModel[] {

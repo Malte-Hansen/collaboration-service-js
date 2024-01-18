@@ -247,6 +247,7 @@ export class SubscriberService {
         .makeUserModel(
           message.id,
           message.name,
+          message.deviceId || '',
           message.color.colorId,
           message.position,
           message.quaternion,
@@ -458,14 +459,16 @@ export class SubscriberService {
     roomMessage: RoomForwardMessage<SpectatingUpdateMessage>,
   ) {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
-    const user = room.getUserModifier().getUserById(roomMessage.userId);
     const message = roomMessage.message;
-    room.getUserModifier().updateSpectating(user, message.isSpectating);
-    this.websocketGateway.sendBroadcastForwardedMessage(
-      event,
-      roomMessage.roomId,
-      { userId: roomMessage.userId, originalMessage: message },
-    );
+    message.spectatingUserIds.forEach((spectatingUserId) => {
+      const user = room.getUserModifier().getUserById(spectatingUserId);
+      room.getUserModifier().updateSpectating(user, message.isSpectating);
+    });
+
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message,
+    });
   }
 
   private handleTimestampUpdateEvent(

@@ -83,12 +83,20 @@ export class UserModifier {
   makeUserModel(
     userId: string,
     userName: string,
+    deviceId: string,
     colorId: number,
     position: number[],
     quaternion: number[],
   ): UserModel {
     const color = this.colorModifier.assignColor(colorId);
-    return new UserModel(userId, userName, color, position, quaternion);
+    return new UserModel(
+      userId,
+      userName,
+      deviceId,
+      color,
+      position,
+      quaternion,
+    );
   }
 
   makeControllerModel(

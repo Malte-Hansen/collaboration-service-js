@@ -9,6 +9,5 @@ export class ExampleModifier {
 
   updateExample(value: number): void {
     this.example.setValue(value);
-    console.log('Example was updatet to value ', value);
   }
 }

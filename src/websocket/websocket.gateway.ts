@@ -124,6 +124,7 @@ import { TicketService } from 'src/ticket/ticket.service';
 import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
 import { VisualizationMode } from 'src/util/visualization-mode';
+import * as fs from 'node:fs';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway
@@ -148,6 +149,7 @@ export class WebsocketGateway
     // Query params
     const ticketId: string = client.handshake.query.ticketId as string;
     const userName: string = client.handshake.query.userName as string;
+    const deviceId: string = client.handshake.query.deviceId as string;
     const mode: VisualizationMode = client.handshake.query
       .mode as VisualizationMode;
 
@@ -168,7 +170,14 @@ export class WebsocketGateway
     const colorId = room.getColorModifier().nextColorId();
     const user = room
       .getUserModifier()
-      .makeUserModel(ticket.userId, userName, colorId, [0, 0, 0], [0, 0, 0, 0]);
+      .makeUserModel(
+        ticket.userId,
+        userName,
+        deviceId,
+        colorId,
+        [0, 0, 0],
+        [0, 0, 0, 0],
+      );
     room.getUserModifier().addUser(user);
     const roomMessage =
       this.messageFactoryService.makeRoomStatusMessage<UserConnectedMessage>(
@@ -176,6 +185,7 @@ export class WebsocketGateway
         {
           id: user.getId(),
           name: user.getUserName(),
+          deviceId: user.getDeviceId(),
           color: user.getColor(),
           position: user.getPosition(),
           quaternion: user.getQuaternion(),
@@ -214,8 +224,10 @@ export class WebsocketGateway
     // Release all locks
     this.lockService.releaseAllLockByUser(session.getUser());
 
-    const message: UserDisconnectedMessage = { id: session.getUser().getId(), 
-      highlightedComponents: session.getUser().getHighlightedEntities()};
+    const message: UserDisconnectedMessage = {
+      id: session.getUser().getId(),
+      highlightedComponents: session.getUser().getHighlightedEntities(),
+    };
     this.publisherService.publishRoomStatusMessage(
       USER_DISCONNECTED_EVENT,
       this.messageFactoryService.makeRoomStatusMessage(
@@ -574,16 +586,38 @@ export class WebsocketGateway
   ): void {
     const session = this.sessionService.lookupSession(client);
     const roomId = session.getRoom().getRoomId();
+
+    // Put spectating clients in a special room since those should receive positional updates
+    const spectatingClients: Socket[] = [];
+    message.spectatingUserIds.forEach((userId) => {
+      spectatingClients.push(this.sessionService.lookupSocket(userId));
+    });
+
     if (message.isSpectating) {
-      client.join(this.getSpectatingRoom(roomId));
+      spectatingClients.forEach((spectatingClient) => {
+        spectatingClient.join(this.getSpectatingRoom(roomId));
+      });
     } else {
-      client.leave(this.getSpectatingRoom(roomId));
+      spectatingClients.forEach((spectatingClient) => {
+        spectatingClient.leave(this.getSpectatingRoom(roomId));
+      });
     }
+
+    const spectateConfig: { deviceId: string; projectionMatrix: number[] }[] =
+      JSON.parse(
+        fs.readFileSync(
+          'src/config/spectate/' + message.configurationId + '.json',
+          'utf8',
+        ),
+      );
+    message.configuration = spectateConfig;
+
     const roomMessage =
       this.messageFactoryService.makeRoomForwardMessage<SpectatingUpdateMessage>(
         client,
         message,
       );
+
     this.publisherService.publishRoomForwardMessage(
       SPECTATING_UPDATE_EVENT,
       roomMessage,
