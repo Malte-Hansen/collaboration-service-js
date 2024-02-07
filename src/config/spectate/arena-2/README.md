@@ -10,4 +10,4 @@ To initiate the spectate / synchronization feature within ARENA2:
 
 The `arena-2.json` contains the computed projection matrices for the devices.
 
-In this folder, the raw configuration parameters in addition with a class that calculates the WebGL projection matrices from those inputs can be found.
+Configure and run the `arena-2-matrix-calculation.html` with Google Chrome and copy the results from the browser console to get new projection matrices for the devices.

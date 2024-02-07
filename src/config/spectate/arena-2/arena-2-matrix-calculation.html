@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>ARENA2 Matrix Calculator</title>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+    />
+  </head>
+  <body>
+    <div id="container"></div>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@v0.152.2/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@v0.152.2/examples/jsm/"
+        }
+      }
+    </script>
+
+    <script type="module">
+      import * as THREE from 'three';
+
+      const DEG2RAD = Math.PI / 180;
+
+      const NEAR = 0.1;
+
+      const FAR = 1000;
+
+      const DOME_TILT = 45;
+
+      const PROJECTOR01 = {
+        id: 'projector01',
+        yawPitchRoll: {
+          yaw: 37.73257,
+          pitch: 24.45517,
+          roll: -14.315,
+        },
+        projectorAngles: {
+          up: 49.6109237,
+          down: 49.6109237,
+          left: 62.0003,
+          right: 62.0003,
+        },
+      };
+
+      const PROJECTOR02 = {
+        id: 'projector02',
+        yawPitchRoll: {
+          yaw: -35.22566,
+          pitch: 27.50301,
+          roll: 16.31073,
+        },
+        projectorAngles: {
+          up: 49.61092,
+          down: 49.61092,
+          left: 62,
+          right: 62,
+        },
+      };
+
+      const PROJECTOR03 = {
+        id: 'projector03',
+        yawPitchRoll: {
+          yaw: -118.98493,
+          pitch: 50.71501,
+          roll: 23.7238,
+        },
+        projectorAngles: {
+          up: 49.6109237,
+          down: 49.6109237,
+          left: 62.0002972,
+          right: 62.0002972,
+        },
+      };
+
+      const PROJECTOR04 = {
+        id: 'projector04',
+        yawPitchRoll: {
+          yaw: 116.72392,
+          pitch: 53.37216,
+          roll: -27.00377,
+        },
+        projectorAngles: {
+          up: 49.6109237,
+          down: 49.6109237,
+          left: 62.0002972,
+          right: 62.0002972,
+        },
+      };
+
+      const PROJECTOR05 = {
+        id: 'projector05',
+        yawPitchRoll: {
+          yaw: -9.4374,
+          pitch: 73.21593,
+          roll: 2.18843,
+        },
+        projectorAngles: {
+          up: 49.6109237,
+          down: 49.6109237,
+          left: 62.0002972,
+          right: 62.0002972,
+        },
+      };
+
+      function getDomeTiltQuaternion() {
+        // 360° whole globe, 180° half globe after horizontal cut, 90° half of half globe with vertical cut.
+        // Horizontal cut, then vertical cut of half globe = angle from border to dometop center
+        const shiftedAngle = 360 / 2 / 2 - DOME_TILT;
+
+        // after setting up rotation axes via synchronisation,
+        // we can use positive pitch to shift synchronized projection to the center of the globe.
+        const domeTiltQuaternion = new THREE.Quaternion(
+          0,
+          0,
+          0,
+          0,
+        ).setFromAxisAngle(new THREE.Vector3(1, 0, 0), shiftedAngle * DEG2RAD);
+
+        return domeTiltQuaternion;
+      }
+
+      function getSychronizationQuaternion(yawPitchRoll) {
+        return new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(
+            -yawPitchRoll.pitch * DEG2RAD, // NEGATIVE Pitch
+            yawPitchRoll.yaw * DEG2RAD, // Yaw
+            yawPitchRoll.roll * DEG2RAD, // Roll
+            'ZXY',
+          ),
+        );
+      }
+
+      function computeProjectionMatrix(projectorAngles, yawPitchRoll) {
+        let projectionMatrix = new THREE.Matrix4().makePerspective(
+          -Math.tan(projectorAngles.left * DEG2RAD) * NEAR,
+          Math.tan(projectorAngles.right * DEG2RAD) * NEAR,
+          Math.tan(projectorAngles.down * DEG2RAD) * NEAR,
+          -Math.tan(projectorAngles.up * DEG2RAD) * NEAR,
+          NEAR,
+          FAR,
+        );
+
+        // Set up Yaw, Pitch and Roll
+        projectionMatrix.multiply(
+          new THREE.Matrix4().makeRotationFromQuaternion(
+            getSychronizationQuaternion(yawPitchRoll),
+          ),
+        );
+
+        // consider dometilt AFTER synchronisation, shifting all projections to the center of dome
+        projectionMatrix.multiply(
+          new THREE.Matrix4().makeRotationFromQuaternion(
+            getDomeTiltQuaternion(),
+          ),
+        );
+
+        return projectionMatrix;
+      }
+
+      console.log({
+        id: 'arena-2',
+        devices: [
+          {
+            deviceId: 'main',
+            projectionMatrix: [
+              0.647540107130474, 0, 0, 0, 0, 1.3032253728412058, 0, 0, 0, 0,
+              -1.002002002002002, -1, 0, 0, -0.20020020020020018, 0,
+            ],
+          },
+          {
+            deviceId: 'projector01',
+            projectionMatrix: computeProjectionMatrix(
+              PROJECTOR01.projectorAngles,
+              PROJECTOR01.yawPitchRoll,
+            ).toArray(),
+          },
+          {
+            deviceId: 'projector02',
+            projectionMatrix: computeProjectionMatrix(
+              PROJECTOR02.projectorAngles,
+              PROJECTOR02.yawPitchRoll,
+            ).toArray(),
+          },
+          {
+            deviceId: 'projector03',
+            projectionMatrix: computeProjectionMatrix(
+              PROJECTOR03.projectorAngles,
+              PROJECTOR03.yawPitchRoll,
+            ).toArray(),
+          },
+          {
+            deviceId: 'projector04',
+            projectionMatrix: computeProjectionMatrix(
+              PROJECTOR04.projectorAngles,
+              PROJECTOR04.yawPitchRoll,
+            ).toArray(),
+          },
+          {
+            deviceId: 'projector05',
+            projectionMatrix: computeProjectionMatrix(
+              PROJECTOR05.projectorAngles,
+              PROJECTOR05.yawPitchRoll,
+            ).toArray(),
+          },
+        ],
+      });
+    </script>
+  </body>
+</html>
