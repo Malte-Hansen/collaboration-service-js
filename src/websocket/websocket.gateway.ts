@@ -7,6 +7,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import * as fs from 'node:fs';
 import { Server, Socket } from 'socket.io';
 import { MessageFactoryService } from 'src/factory/message-factory/message-factory.service';
 import { IdGenerationService } from 'src/id-generation/id-generation.service';
@@ -23,6 +24,10 @@ import {
   APP_OPENED_EVENT,
   AppOpenedMessage,
 } from 'src/message/client/receivable/app-opened-message';
+import {
+  CHANGE_LANDSCAPE_EVENT,
+  ChangeLandscapeMessage,
+} from 'src/message/client/receivable/change-landscape-message';
 import {
   COMPONENT_UPDATE_EVENT,
   ComponentUpdateMessage,
@@ -124,7 +129,6 @@ import { TicketService } from 'src/ticket/ticket.service';
 import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
 import { VisualizationMode } from 'src/util/visualization-mode';
-import * as fs from 'node:fs';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway
@@ -530,6 +534,22 @@ export class WebsocketGateway
       );
     this.publisherService.publishRoomForwardMessage(
       ALL_HIGHLIGHTS_RESET_EVENT,
+      roomMessage,
+    );
+  }
+
+  @SubscribeMessage(CHANGE_LANDSCAPE_EVENT)
+  handleChangeLandscapeMessage(
+    @MessageBody() message: ChangeLandscapeMessage,
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const roomMessage =
+      this.messageFactoryService.makeRoomForwardMessage<ChangeLandscapeMessage>(
+        client,
+        message,
+      );
+    this.publisherService.publishRoomForwardMessage(
+      CHANGE_LANDSCAPE_EVENT,
       roomMessage,
     );
   }

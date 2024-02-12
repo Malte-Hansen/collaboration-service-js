@@ -92,6 +92,10 @@ import {
   JOIN_VR_EVENT,
   JoinVrMessage,
 } from 'src/message/client/receivable/join-vr-message';
+import {
+  CHANGE_LANDSCAPE_EVENT,
+  ChangeLandscapeMessage,
+} from 'src/message/client/receivable/change-landscape-message';
 
 @Injectable()
 export class SubscriberService {
@@ -119,6 +123,9 @@ export class SubscriberService {
     );
     listener.set(APP_OPENED_EVENT, (msg: any) =>
       this.handleAppOpenedEvent(APP_OPENED_EVENT, msg),
+    );
+    listener.set(CHANGE_LANDSCAPE_EVENT, (msg: any) =>
+      this.handleChangeLandscapeEvent(CHANGE_LANDSCAPE_EVENT, msg),
     );
     listener.set(COMPONENT_UPDATE_EVENT, (msg: any) =>
       this.handleComponentUpdateEvent(COMPONENT_UPDATE_EVENT, msg),
@@ -339,6 +346,17 @@ export class SubscriberService {
       event,
       roomMessage.roomId,
       { userId: roomMessage.userId, originalMessage: message },
+    );
+  }
+
+  private handleChangeLandscapeEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<ChangeLandscapeMessage>,
+  ) {
+    this.websocketGateway.sendBroadcastForwardedMessage(
+      event,
+      roomMessage.roomId,
+      { userId: roomMessage.userId, originalMessage: roomMessage.message },
     );
   }
 
