@@ -125,6 +125,10 @@ import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
 import { VisualizationMode } from 'src/util/visualization-mode';
 import * as fs from 'node:fs';
+import {
+  SHARE_SETTINGS_EVENT,
+  ShareSettingsMessage,
+} from 'src/message/client/receivable/share-settings-message';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway
@@ -575,6 +579,22 @@ export class WebsocketGateway
       );
     this.publisherService.publishRoomForwardMessage(
       PING_UPDATE_EVENT,
+      roomMessage,
+    );
+  }
+
+  @SubscribeMessage(SHARE_SETTINGS_EVENT)
+  handleShareSettingsMessage(
+    @MessageBody() message: ShareSettingsMessage,
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const roomMessage =
+      this.messageFactoryService.makeRoomForwardMessage<ShareSettingsMessage>(
+        client,
+        message,
+      );
+    this.publisherService.publishRoomForwardMessage(
+      SHARE_SETTINGS_EVENT,
       roomMessage,
     );
   }

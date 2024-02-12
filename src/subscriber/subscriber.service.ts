@@ -92,6 +92,10 @@ import {
   JOIN_VR_EVENT,
   JoinVrMessage,
 } from 'src/message/client/receivable/join-vr-message';
+import {
+  SHARE_SETTINGS_EVENT,
+  ShareSettingsMessage,
+} from 'src/message/client/receivable/share-settings-message';
 
 @Injectable()
 export class SubscriberService {
@@ -137,6 +141,9 @@ export class SubscriberService {
     );
     listener.set(PING_UPDATE_EVENT, (msg: any) =>
       this.handlePingUpdateEvent(PING_UPDATE_EVENT, msg),
+    );
+    listener.set(SHARE_SETTINGS_EVENT, (msg: any) =>
+      this.handleShareSettingsEvent(SHARE_SETTINGS_EVENT, msg),
     );
     listener.set(SPECTATING_UPDATE_EVENT, (msg: any) =>
       this.handleSpectatingUpdateEvent(SPECTATING_UPDATE_EVENT, msg),
@@ -445,6 +452,18 @@ export class SubscriberService {
   private handlePingUpdateEvent(
     event: string,
     roomMessage: RoomForwardMessage<PingUpdateMessage>,
+  ) {
+    const message = roomMessage.message;
+    this.websocketGateway.sendBroadcastForwardedMessage(
+      event,
+      roomMessage.roomId,
+      { userId: roomMessage.userId, originalMessage: message },
+    );
+  }
+
+  private handleShareSettingsEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<ShareSettingsMessage>,
   ) {
     const message = roomMessage.message;
     this.websocketGateway.sendBroadcastForwardedMessage(
