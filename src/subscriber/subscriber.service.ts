@@ -1,32 +1,30 @@
+import { RedisService } from '@liaoliaots/nestjs-redis';
 import { Inject, Injectable, forwardRef } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { RedisService } from '@liaoliaots/nestjs-redis';
-import { WebsocketGateway } from 'src/websocket/websocket.gateway';
 import {
-  CREATE_ROOM_EVENT,
-  CreateRoomMessage,
-} from 'src/message/pubsub/create-room-message';
-import { RoomService } from 'src/room/room.service';
-import { RoomForwardMessage } from 'src/message/pubsub/room-forward-message';
+  ALL_HIGHLIGHTS_RESET_EVENT,
+  AllHighlightsResetMessage,
+} from 'src/message/client/receivable/all-highlights-reset-message';
 import {
-  USER_DISCONNECTED_EVENT,
-  UserDisconnectedMessage,
-} from 'src/message/client/sendable/user-disconnected-message';
-import { RoomStatusMessage } from 'src/message/pubsub/room-status-message';
-import { UserModel } from 'src/model/user-model';
-import {
-  MENU_DETACHED_EVENT,
-  MenuDetachedMessage,
-} from 'src/message/client/receivable/menu-detached-message';
-import { MenuDetachedForwardMessage } from 'src/message/client/sendable/menu-detached-forward-message';
+  APP_CLOSED_EVENT,
+  AppClosedMessage,
+} from 'src/message/client/receivable/app-closed-message';
 import {
   APP_OPENED_EVENT,
   AppOpenedMessage,
 } from 'src/message/client/receivable/app-opened-message';
 import {
+  CHANGE_LANDSCAPE_EVENT,
+  ChangeLandscapeMessage,
+} from 'src/message/client/receivable/change-landscape-message';
+import {
   COMPONENT_UPDATE_EVENT,
   ComponentUpdateMessage,
 } from 'src/message/client/receivable/component-update-message';
+import {
+  DETACHED_MENU_CLOSED_EVENT,
+  DetachedMenuClosedMessage,
+} from 'src/message/client/receivable/detached-menu-closed-message';
 import {
   HEATMAP_UPDATE_EVENT,
   HeatmapUpdateMessage,
@@ -36,13 +34,29 @@ import {
   HighlightingUpdateMessage,
 } from 'src/message/client/receivable/highlighting-update-message';
 import {
+  JOIN_VR_EVENT,
+  JoinVrMessage,
+} from 'src/message/client/receivable/join-vr-message';
+import {
+  MENU_DETACHED_EVENT,
+  MenuDetachedMessage,
+} from 'src/message/client/receivable/menu-detached-message';
+import {
   MOUSE_PING_UPDATE_EVENT,
   MousePingUpdateMessage,
 } from 'src/message/client/receivable/mouse-ping-update-message';
 import {
+  OBJECT_MOVED_EVENT,
+  ObjectMovedMessage,
+} from 'src/message/client/receivable/object-moved-message';
+import {
   PING_UPDATE_EVENT,
   PingUpdateMessage,
 } from 'src/message/client/receivable/ping-update-message';
+import {
+  SHARE_SETTINGS_EVENT,
+  ShareSettingsMessage,
+} from 'src/message/client/receivable/share-settings-message';
 import {
   SPECTATING_UPDATE_EVENT,
   SpectatingUpdateMessage,
@@ -55,7 +69,6 @@ import {
   USER_CONTROLLER_CONNECT_EVENT,
   UserControllerConnectMessage,
 } from 'src/message/client/receivable/user-controller-connect-message';
-import { PublishIdMessage } from 'src/message/pubsub/publish-id-message';
 import {
   USER_CONTROLLER_DISCONNECT_EVENT,
   UserControllerDisconnectMessage,
@@ -64,38 +77,29 @@ import {
   USER_POSITIONS_EVENT,
   UserPositionsMessage,
 } from 'src/message/client/receivable/user-positions-message';
+import { MenuDetachedForwardMessage } from 'src/message/client/sendable/menu-detached-forward-message';
 import {
   TIMESTAMP_UPDATE_TIMER_EVENT,
   TimestampUpdateTimerMessage,
 } from 'src/message/client/sendable/timestamp-update-timer-message';
 import {
-  OBJECT_MOVED_EVENT,
-  ObjectMovedMessage,
-} from 'src/message/client/receivable/object-moved-message';
-import {
-  APP_CLOSED_EVENT,
-  AppClosedMessage,
-} from 'src/message/client/receivable/app-closed-message';
-import {
-  DETACHED_MENU_CLOSED_EVENT,
-  DetachedMenuClosedMessage,
-} from 'src/message/client/receivable/detached-menu-closed-message';
-import {
   USER_CONNECTED_EVENT,
   UserConnectedMessage,
 } from 'src/message/client/sendable/user-connected-message';
 import {
-  ALL_HIGHLIGHTS_RESET_EVENT,
-  AllHighlightsResetMessage,
-} from 'src/message/client/receivable/all-highlights-reset-message';
+  USER_DISCONNECTED_EVENT,
+  UserDisconnectedMessage,
+} from 'src/message/client/sendable/user-disconnected-message';
 import {
-  JOIN_VR_EVENT,
-  JoinVrMessage,
-} from 'src/message/client/receivable/join-vr-message';
-import {
-  CHANGE_LANDSCAPE_EVENT,
-  ChangeLandscapeMessage,
-} from 'src/message/client/receivable/change-landscape-message';
+  CREATE_ROOM_EVENT,
+  CreateRoomMessage,
+} from 'src/message/pubsub/create-room-message';
+import { PublishIdMessage } from 'src/message/pubsub/publish-id-message';
+import { RoomForwardMessage } from 'src/message/pubsub/room-forward-message';
+import { RoomStatusMessage } from 'src/message/pubsub/room-status-message';
+import { UserModel } from 'src/model/user-model';
+import { RoomService } from 'src/room/room.service';
+import { WebsocketGateway } from 'src/websocket/websocket.gateway';
 
 @Injectable()
 export class SubscriberService {
@@ -144,6 +148,9 @@ export class SubscriberService {
     );
     listener.set(PING_UPDATE_EVENT, (msg: any) =>
       this.handlePingUpdateEvent(PING_UPDATE_EVENT, msg),
+    );
+    listener.set(SHARE_SETTINGS_EVENT, (msg: any) =>
+      this.handleShareSettingsEvent(SHARE_SETTINGS_EVENT, msg),
     );
     listener.set(SPECTATING_UPDATE_EVENT, (msg: any) =>
       this.handleSpectatingUpdateEvent(SPECTATING_UPDATE_EVENT, msg),
@@ -463,6 +470,18 @@ export class SubscriberService {
   private handlePingUpdateEvent(
     event: string,
     roomMessage: RoomForwardMessage<PingUpdateMessage>,
+  ) {
+    const message = roomMessage.message;
+    this.websocketGateway.sendBroadcastForwardedMessage(
+      event,
+      roomMessage.roomId,
+      { userId: roomMessage.userId, originalMessage: message },
+    );
+  }
+
+  private handleShareSettingsEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<ShareSettingsMessage>,
   ) {
     const message = roomMessage.message;
     this.websocketGateway.sendBroadcastForwardedMessage(

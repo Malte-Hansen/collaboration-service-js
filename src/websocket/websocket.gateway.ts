@@ -73,6 +73,10 @@ import {
   PingUpdateMessage,
 } from 'src/message/client/receivable/ping-update-message';
 import {
+  SHARE_SETTINGS_EVENT,
+  ShareSettingsMessage,
+} from 'src/message/client/receivable/share-settings-message';
+import {
   SPECTATING_UPDATE_EVENT,
   SpectatingUpdateMessage,
 } from 'src/message/client/receivable/spectating-update-message';
@@ -595,6 +599,22 @@ export class WebsocketGateway
       );
     this.publisherService.publishRoomForwardMessage(
       PING_UPDATE_EVENT,
+      roomMessage,
+    );
+  }
+
+  @SubscribeMessage(SHARE_SETTINGS_EVENT)
+  handleShareSettingsMessage(
+    @MessageBody() message: ShareSettingsMessage,
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const roomMessage =
+      this.messageFactoryService.makeRoomForwardMessage<ShareSettingsMessage>(
+        client,
+        message,
+      );
+    this.publisherService.publishRoomForwardMessage(
+      SHARE_SETTINGS_EVENT,
       roomMessage,
     );
   }
