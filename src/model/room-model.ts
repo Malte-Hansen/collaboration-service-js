@@ -80,4 +80,17 @@ export class Room {
   getGrabModifier(): GrabModifier {
     return this.grabModifier;
   }
+
+  changeLandscapeToken(landscapeToken: string): void {
+    if (
+      this.getLandscapeModifier().getLandscape().getLandscapeToken() ===
+      landscapeToken
+    ) {
+      return;
+    }
+    this.getLandscapeModifier().setLandscapeToken(landscapeToken);
+    this.getApplicationModifier().clear();
+    this.getGrabModifier().clear();
+    this.getHeatmapModifier().clear();
+  }
 }

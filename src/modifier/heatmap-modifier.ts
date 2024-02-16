@@ -35,4 +35,11 @@ export class HeatmapModifier {
   setApplicationId(applicationId: string): void {
     this.applicationId = applicationId;
   }
+
+  clear(): void {
+    this.active = false;
+    this.metric = '';
+    this.mode = '';
+    this.applicationId = '';
+  }
 }

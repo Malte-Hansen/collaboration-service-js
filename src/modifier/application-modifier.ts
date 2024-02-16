@@ -58,6 +58,10 @@ export class ApplicationModifier {
     }
   }
 
+  clear() {
+    this.openApplications.clear();
+  }
+
   private getOrCreateApplication(appId: string): ApplicationModel {
     let appModel = this.openApplications.get(appId);
     if (!appModel) {

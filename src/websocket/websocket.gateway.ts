@@ -547,6 +547,9 @@ export class WebsocketGateway
     @MessageBody() message: ChangeLandscapeMessage,
     @ConnectedSocket() client: Socket,
   ): void {
+    const room = this.sessionService.lookupSession(client).getRoom();
+    room.changeLandscapeToken(message.landscapeToken);
+
     const roomMessage =
       this.messageFactoryService.makeRoomForwardMessage<ChangeLandscapeMessage>(
         client,
