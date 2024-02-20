@@ -81,6 +81,10 @@ import {
   SpectatingUpdateMessage,
 } from 'src/message/client/receivable/spectating-update-message';
 import {
+  SYNC_ROOM_STATE_EVENT,
+  SyncRoomStateMessage,
+} from 'src/message/client/receivable/sync-room-state-message';
+import {
   TIMESTAMP_UPDATE_EVENT,
   TimestampUpdateMessage,
 } from 'src/message/client/receivable/timestamp-update-message';
@@ -663,6 +667,23 @@ export class WebsocketGateway
 
     this.publisherService.publishRoomForwardMessage(
       SPECTATING_UPDATE_EVENT,
+      roomMessage,
+    );
+  }
+
+  @SubscribeMessage(SYNC_ROOM_STATE_EVENT)
+  handleSyncRoomStateMessage(
+    @MessageBody() message: SyncRoomStateMessage,
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const roomMessage =
+      this.messageFactoryService.makeRoomForwardMessage<SyncRoomStateMessage>(
+        client,
+        message,
+      );
+
+    this.publisherService.publishRoomForwardMessage(
+      SYNC_ROOM_STATE_EVENT,
       roomMessage,
     );
   }

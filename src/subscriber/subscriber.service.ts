@@ -62,6 +62,10 @@ import {
   SpectatingUpdateMessage,
 } from 'src/message/client/receivable/spectating-update-message';
 import {
+  SYNC_ROOM_STATE_EVENT,
+  SyncRoomStateMessage,
+} from 'src/message/client/receivable/sync-room-state-message';
+import {
   TIMESTAMP_UPDATE_EVENT,
   TimestampUpdateMessage,
 } from 'src/message/client/receivable/timestamp-update-message';
@@ -155,6 +159,9 @@ export class SubscriberService {
     listener.set(SPECTATING_UPDATE_EVENT, (msg: any) =>
       this.handleSpectatingUpdateEvent(SPECTATING_UPDATE_EVENT, msg),
     );
+    listener.set(SYNC_ROOM_STATE_EVENT, (msg: any) =>
+      this.handleSyncRoomStateEvent(SYNC_ROOM_STATE_EVENT, msg),
+    );
     listener.set(TIMESTAMP_UPDATE_EVENT, (msg: any) =>
       this.handleTimestampUpdateEvent(TIMESTAMP_UPDATE_EVENT, msg),
     );
@@ -243,6 +250,62 @@ export class SubscriberService {
           detachedMenu.menu.scale,
         );
     }
+  }
+
+  private handleSyncRoomStateEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<SyncRoomStateMessage>,
+  ) {
+    const room = this.roomService.lookupRoom(roomMessage.roomId);
+    if (!room) {
+      return;
+    }
+
+    const publishedLandscape = roomMessage.message.landscape;
+
+    room
+      .getLandscapeModifier()
+      .initLandscape(
+        publishedLandscape.landscapeToken,
+        publishedLandscape.timestamp,
+      );
+
+    room.getApplicationModifier().closeAllApplications();
+
+    // Initialize apps and components
+    for (const app of roomMessage.message.openApps) {
+      room
+        .getApplicationModifier()
+        .openApplication(app.id, app.position, app.quaternion, app.scale);
+      for (const componentId of app.openComponents) {
+        room
+          .getApplicationModifier()
+          .updateComponent(componentId, app.id, false, true);
+      }
+    }
+
+    room.getDetachedMenuModifier().closeAllDetachedMenus();
+
+    // Initialize detached menus
+    for (const detachedMenu of roomMessage.message.detachedMenus) {
+      room
+        .getDetachedMenuModifier()
+        .detachMenu(
+          detachedMenu.id,
+          detachedMenu.menu.entityId,
+          detachedMenu.menu.entityType,
+          detachedMenu.menu.userId,
+          detachedMenu.menu.position,
+          detachedMenu.menu.quaternion,
+          detachedMenu.menu.scale,
+        );
+    }
+
+    this.websocketGateway.sendBroadcastForwardedMessage(
+      event,
+      roomMessage.roomId,
+      { userId: roomMessage.userId, originalMessage: roomMessage.message },
+    );
   }
 
   private handleUserConnectedEvent(
