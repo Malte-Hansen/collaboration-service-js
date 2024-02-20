@@ -873,6 +873,9 @@ export class WebsocketGateway
           roomMessage,
         );
       }
+    } else {
+      // Do not prehibit closing if the object is not found
+      success = true;
     }
     const response: ObjectClosedResponse = { isSuccess: success };
     this.sendResponse(
