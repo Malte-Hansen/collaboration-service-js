@@ -336,7 +336,7 @@ export class WebsocketGateway
    *
    * @param event The event
    * @param roomId The ID of the room
-   * @param userId The ID of the user
+   * @param userId The ID of the user that is excluded
    * @param message The message which encapsulates event-specific data
    */
   sendBroadcastExceptOneMessage(
@@ -856,27 +856,26 @@ export class WebsocketGateway
       .getRoom()
       .getGrabModifier()
       .getGrabbableObject(message.menuId);
-    let success = false;
+    let success = true;
     if (object) {
       success = await this.lockService.closeGrabbableObject(
         session.getRoom(),
         object,
       );
-      if (success) {
-        const roomMessage =
-          this.messageFactoryService.makeRoomForwardMessage<DetachedMenuClosedMessage>(
-            client,
-            message,
-          );
-        this.publisherService.publishRoomForwardMessage(
-          DETACHED_MENU_CLOSED_EVENT,
-          roomMessage,
-        );
-      }
-    } else {
-      // Do not prehibit closing if the object is not found
-      success = true;
     }
+
+    if (success) {
+      const roomMessage =
+        this.messageFactoryService.makeRoomForwardMessage<DetachedMenuClosedMessage>(
+          client,
+          message,
+        );
+      this.publisherService.publishRoomForwardMessage(
+        DETACHED_MENU_CLOSED_EVENT,
+        roomMessage,
+      );
+    }
+
     const response: ObjectClosedResponse = { isSuccess: success };
     this.sendResponse(
       OBJECT_CLOSED_RESPONSE_EVENT,
