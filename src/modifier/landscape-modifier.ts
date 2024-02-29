@@ -26,6 +26,10 @@ export class LandscapeModifier {
     this.grabModifier.addGrabbableObject(this.landscape);
   }
 
+  setLandscapeToken(landscapeToken: string): void {
+    this.landscape.setLandscapeToken(landscapeToken);
+  }
+
   updateTimestamp(timestamp: number): void {
     this.landscape.setTimestamp(timestamp);
     this.centerLandscape();

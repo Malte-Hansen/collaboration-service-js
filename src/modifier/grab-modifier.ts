@@ -29,4 +29,8 @@ export class GrabModifier {
   getGrabbableObject(objectId: string): GrabbableObjectModel | null {
     return this.grabbableObjects.get(objectId);
   }
+
+  clear() {
+    this.grabbableObjects.clear();
+  }
 }

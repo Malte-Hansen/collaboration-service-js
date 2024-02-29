@@ -5,6 +5,7 @@ export class ScalableBaseModel extends BaseModel {
 
   constructor(id: string) {
     super(id);
+    this.scale = [1, 1, 1];
   }
 
   getScale(): number[] {

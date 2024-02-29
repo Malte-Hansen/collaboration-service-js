@@ -7,6 +7,7 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import * as fs from 'node:fs';
 import { Server, Socket } from 'socket.io';
 import { MessageFactoryService } from 'src/factory/message-factory/message-factory.service';
 import { IdGenerationService } from 'src/id-generation/id-generation.service';
@@ -23,6 +24,10 @@ import {
   APP_OPENED_EVENT,
   AppOpenedMessage,
 } from 'src/message/client/receivable/app-opened-message';
+import {
+  CHANGE_LANDSCAPE_EVENT,
+  ChangeLandscapeMessage,
+} from 'src/message/client/receivable/change-landscape-message';
 import {
   COMPONENT_UPDATE_EVENT,
   ComponentUpdateMessage,
@@ -68,9 +73,17 @@ import {
   PingUpdateMessage,
 } from 'src/message/client/receivable/ping-update-message';
 import {
+  SHARE_SETTINGS_EVENT,
+  ShareSettingsMessage,
+} from 'src/message/client/receivable/share-settings-message';
+import {
   SPECTATING_UPDATE_EVENT,
   SpectatingUpdateMessage,
 } from 'src/message/client/receivable/spectating-update-message';
+import {
+  SYNC_ROOM_STATE_EVENT,
+  SyncRoomStateMessage,
+} from 'src/message/client/receivable/sync-room-state-message';
 import {
   TIMESTAMP_UPDATE_EVENT,
   TimestampUpdateMessage,
@@ -124,11 +137,6 @@ import { TicketService } from 'src/ticket/ticket.service';
 import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
 import { VisualizationMode } from 'src/util/visualization-mode';
-import * as fs from 'node:fs';
-import {
-  SHARE_SETTINGS_EVENT,
-  ShareSettingsMessage,
-} from 'src/message/client/receivable/share-settings-message';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway
@@ -328,7 +336,7 @@ export class WebsocketGateway
    *
    * @param event The event
    * @param roomId The ID of the room
-   * @param userId The ID of the user
+   * @param userId The ID of the user that is excluded
    * @param message The message which encapsulates event-specific data
    */
   sendBroadcastExceptOneMessage(
@@ -538,6 +546,25 @@ export class WebsocketGateway
     );
   }
 
+  @SubscribeMessage(CHANGE_LANDSCAPE_EVENT)
+  handleChangeLandscapeMessage(
+    @MessageBody() message: ChangeLandscapeMessage,
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const room = this.sessionService.lookupSession(client).getRoom();
+    room.changeLandscapeToken(message.landscapeToken);
+
+    const roomMessage =
+      this.messageFactoryService.makeRoomForwardMessage<ChangeLandscapeMessage>(
+        client,
+        message,
+      );
+    this.publisherService.publishRoomForwardMessage(
+      CHANGE_LANDSCAPE_EVENT,
+      roomMessage,
+    );
+  }
+
   @SubscribeMessage(JOIN_VR_EVENT)
   handleJoinVrMessage(
     @MessageBody() message: JoinVrMessage,
@@ -640,6 +667,23 @@ export class WebsocketGateway
 
     this.publisherService.publishRoomForwardMessage(
       SPECTATING_UPDATE_EVENT,
+      roomMessage,
+    );
+  }
+
+  @SubscribeMessage(SYNC_ROOM_STATE_EVENT)
+  handleSyncRoomStateMessage(
+    @MessageBody() message: SyncRoomStateMessage,
+    @ConnectedSocket() client: Socket,
+  ): void {
+    const roomMessage =
+      this.messageFactoryService.makeRoomForwardMessage<SyncRoomStateMessage>(
+        client,
+        message,
+      );
+
+    this.publisherService.publishRoomForwardMessage(
+      SYNC_ROOM_STATE_EVENT,
       roomMessage,
     );
   }
@@ -812,24 +856,26 @@ export class WebsocketGateway
       .getRoom()
       .getGrabModifier()
       .getGrabbableObject(message.menuId);
-    let success = false;
+    let success = true;
     if (object) {
       success = await this.lockService.closeGrabbableObject(
         session.getRoom(),
         object,
       );
-      if (success) {
-        const roomMessage =
-          this.messageFactoryService.makeRoomForwardMessage<DetachedMenuClosedMessage>(
-            client,
-            message,
-          );
-        this.publisherService.publishRoomForwardMessage(
-          DETACHED_MENU_CLOSED_EVENT,
-          roomMessage,
-        );
-      }
     }
+
+    if (success) {
+      const roomMessage =
+        this.messageFactoryService.makeRoomForwardMessage<DetachedMenuClosedMessage>(
+          client,
+          message,
+        );
+      this.publisherService.publishRoomForwardMessage(
+        DETACHED_MENU_CLOSED_EVENT,
+        roomMessage,
+      );
+    }
+
     const response: ObjectClosedResponse = { isSuccess: success };
     this.sendResponse(
       OBJECT_CLOSED_RESPONSE_EVENT,
