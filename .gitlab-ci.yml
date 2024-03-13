@@ -1,8 +1,8 @@
 default:
   tags:
-   - exec-docker 
+    - exec-docker
   image: node:latest
-  cache:  # Cache modules in between jobs
+  cache: # Cache modules in between jobs
     key: $CI_COMMIT_REF_SLUG
     paths:
       - .npm/
@@ -56,8 +56,8 @@ test:
     entrypoint: ['']
   script:
     - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"$EXPLORVIZ_CI_REGISTRY_KANIKO\":{\"auth\":\"$(echo -n ${EXPLORVIZ_DOCKERHUB_USERNAME}:${EXPLORVIZ_DOCKERHUB_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor --context=$CI_PROJECT_DIR --dockerfile=$CI_PROJECT_DIR/Dockerfile --destination=$EXPLORVIZ_DOCKERHUB_ORGA/$DOCKERHUB_IMAGE_NAME:$DOCKERHUB_TAG
+    - echo "{\"auths\":{\"$CONTAINER_REGISTRY_URL\":{\"auth\":\"$(echo -n ${DOCKERHUB_USERNAME}:${EXPLORVIZ_DOCKERHUB_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
+    - /kaniko/executor --context=$CI_PROJECT_DIR --dockerfile=$CI_PROJECT_DIR/Dockerfile --destination=$DOCKERHUB_ORGANIZATION/$DOCKERHUB_IMAGE_NAME:$DOCKERHUB_TAG
 
 deploy-dockerhub-main:
   extends:
@@ -86,5 +86,5 @@ retag-dockerhub-image:
     DOCKERHUB_IMAGE_NAME: 'collaboration-service-js'
     DOCKERHUB_TAG: 'latest'
   script:
-    - crane auth login -u $EXPLORVIZ_DOCKERHUB_USERNAME -p $EXPLORVIZ_DOCKERHUB_PASSWORD "index.docker.io"
-    - crane cp $EXPLORVIZ_DOCKERHUB_ORGA/$DOCKERHUB_IMAGE_NAME:$DOCKERHUB_TAG $EXPLORVIZ_DOCKERHUB_ORGA/$DOCKERHUB_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    - crane auth login -u $DOCKERHUB_USERNAME -p $EXPLORVIZ_DOCKERHUB_PASSWORD "index.docker.io"
+    - crane cp $DOCKERHUB_ORGANIZATION/$DOCKERHUB_IMAGE_NAME:$DOCKERHUB_TAG $DOCKERHUB_ORGANIZATION/$DOCKERHUB_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
