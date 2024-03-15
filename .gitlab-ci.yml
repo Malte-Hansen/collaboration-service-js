@@ -1,3 +1,7 @@
+include:
+  - project: 'ExplorViz/code/deployment'
+    file: '.gitlab-ci-docker-manifest.yml'
+
 default:
   tags:
     - exec-docker
@@ -49,7 +53,6 @@ test:
   before_script: []
   cache: []
   variables:
-    DOCKERHUB_IMAGE_NAME: 'collaboration-service-js'
     DOCKERHUB_TAG: 'latest'
   image:
     name: gcr.io/kaniko-project/executor:debug
@@ -59,32 +62,35 @@ test:
     - echo "{\"auths\":{\"$CONTAINER_REGISTRY_URL\":{\"auth\":\"$(echo -n ${DOCKERHUB_USERNAME}:${EXPLORVIZ_DOCKERHUB_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
     - /kaniko/executor --context=$CI_PROJECT_DIR --dockerfile=$CI_PROJECT_DIR/Dockerfile --destination=$DOCKERHUB_ORGANIZATION/$DOCKERHUB_IMAGE_NAME:$DOCKERHUB_TAG
 
-deploy-dockerhub-main:
+deploy-dockerhub-amd64:
   extends:
     - .deploy-to-dockerhub
+  variables:
+    DOCKERHUB_TAG: 'amd64'
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == "main"'
 
-deploy-dockerhub-mr:
-  variables:
-    DOCKERHUB_TAG: $CI_COMMIT_SHORT_SHA
+deploy-dockerhub-arm64:
   extends:
     - .deploy-to-dockerhub
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
-
-retag-dockerhub-image:
-  stage: deploy:retagging
-  before_script: []
-  cache: []
-  rules:
-    - if: '($CI_COMMIT_BRANCH == "dev" || $CI_COMMIT_BRANCH == "main") && $CI_PIPELINE_SOURCE == "push"'
-  image:
-    name: gcr.io/go-containerregistry/crane:debug
-    entrypoint: ['']
+  tags:
+    - "arm64"
   variables:
-    DOCKERHUB_IMAGE_NAME: 'collaboration-service-js'
-    DOCKERHUB_TAG: 'latest'
-  script:
-    - crane auth login -u $DOCKERHUB_USERNAME -p $EXPLORVIZ_DOCKERHUB_PASSWORD "index.docker.io"
-    - crane cp $DOCKERHUB_ORGANIZATION/$DOCKERHUB_IMAGE_NAME:$DOCKERHUB_TAG $DOCKERHUB_ORGANIZATION/$DOCKERHUB_IMAGE_NAME:$CI_COMMIT_SHORT_SHA
+    DOCKERHUB_TAG: 'arm64'
+  rules:
+    - if: $MULTI_ARCH_BUILD
+
+retag-amd64-as-latest::
+  extends: .retag-dockerhub-image
+  rules:
+    - if: $MULTI_ARCH_BUILD
+      when: never
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == "main"'
+  variables:
+    SOURCE_TAG: "amd64"
+    TARGET_TAG: "latest"
+
+
+publish-multi-arch-manifest:
+  extends: .retag-as-multi-arch-dockerhub-image
+
