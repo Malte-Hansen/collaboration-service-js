@@ -1,6 +1,6 @@
 include:
   - project: 'ExplorViz/code/deployment'
-    file: '.gitlab-ci-docker-manifest.yml'
+    file: '.gitlab-ci-explorviz-common.yml'
 
 default:
   tags:
@@ -75,7 +75,7 @@ deploy-main-arm64:
   extends:
     - .deploy-to-dockerhub
   tags:
-    - "arm64"
+    - 'arm64'
   variables:
     DOCKERHUB_TAG: 'arm64'
   rules:
@@ -89,8 +89,8 @@ retag-amd64-as-latest::
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "pipeline"'
   variables:
-    SOURCE_TAG: "amd64"
-    TARGET_TAG: "latest"
+    SOURCE_TAG: 'amd64'
+    TARGET_TAG: 'latest'
 
 deploy-mr:
   variables:
