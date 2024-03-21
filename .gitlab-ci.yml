@@ -48,23 +48,9 @@ test:
     - sleep 10
     - npm run test:supertest
 
-.deploy-to-dockerhub:
-  stage: deploy:images
-  before_script: []
-  cache: []
-  variables:
-    DOCKERHUB_TAG: 'latest'
-  image:
-    name: gcr.io/kaniko-project/executor:debug
-    entrypoint: ['']
-  script:
-    - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"$CONTAINER_REGISTRY_URL\":{\"auth\":\"$(echo -n ${DOCKERHUB_USERNAME}:${DOCKERHUB_PASSWORD} | base64)\"}}}" > /kaniko/.docker/config.json
-    - /kaniko/executor --context=$CI_PROJECT_DIR --dockerfile=$CI_PROJECT_DIR/Dockerfile --destination=$DOCKERHUB_ORGANIZATION/$DOCKERHUB_IMAGE_NAME:$DOCKERHUB_TAG
-
 deploy-main-amd64:
   extends:
-    - .deploy-to-dockerhub
+    - .build-and-deploy
   variables:
     DOCKERHUB_TAG: 'amd64'
   rules:
@@ -73,18 +59,18 @@ deploy-main-amd64:
 
 deploy-main-arm64:
   extends:
-    - .deploy-to-dockerhub
+    - .build-and-deploy
   tags:
     - 'arm64'
   variables:
     DOCKERHUB_TAG: 'arm64'
   rules:
-    - if: $MULTI_ARCH_BUILD
+    - if: $MULTI_ARCH_BUILD || $ARM64_BUILD
 
 retag-amd64-as-latest::
   extends: .retag-dockerhub-image
   rules:
-    - if: $MULTI_ARCH_BUILD
+    - if: $MULTI_ARCH_BUILD || $ARM64_BUILD
       when: never
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PIPELINE_SOURCE != "schedule" && $CI_COMMIT_BRANCH == "main"'
     - if: '$CI_PIPELINE_SOURCE == "pipeline"'
@@ -96,7 +82,7 @@ deploy-mr:
   variables:
     DOCKERHUB_TAG: mr-$CI_MERGE_REQUEST_IID
   extends:
-    - .deploy-to-dockerhub
+    - .build-and-deploy
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"'
 
