@@ -19,7 +19,7 @@ import { SubscriberService } from './subscriber/subscriber.service';
       config: {
         host: process.env.REDIS_HOST || 'localhost',
         port: parseInt(process.env.REDIS_PORT || '6379'),
-        password: process.env.REDIS_PASSWORD || 'authpassword',
+        password: process.env.REDIS_PASSWORD || '',
       },
     }),
     ScheduleModule.forRoot(),
