@@ -1,6 +1,7 @@
-const sharedConfig = require('./jest.config');
+import sharedConfig from './jest.config';
+import type { Config } from 'jest';
 
-module.exports = {
+const superTestConfig: Config = {
   ...sharedConfig,
   moduleFileExtensions: ['js', 'json', 'ts'],
   testRegex: '.supertest-spec.ts$',
@@ -8,3 +9,5 @@ module.exports = {
     '^.+\\.(t|j)s$': 'ts-jest',
   },
 };
+
+export default superTestConfig;

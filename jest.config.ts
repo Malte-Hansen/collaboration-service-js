@@ -1,4 +1,6 @@
-module.exports = {
+import type { Config } from 'jest';
+
+const config: Config = {
   testEnvironment: 'node',
   preset: 'ts-jest',
   rootDir: './',
@@ -13,3 +15,5 @@ module.exports = {
     '<rootDir>/(coverage|dist|lib|tmp)./',
   ],
 };
+
+export default config;
