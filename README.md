@@ -10,12 +10,12 @@ Re-engineered Collaboration Service. The corresponding frontend branch is availa
 
 ## Running / Development
 
-- Start local Redis instance: `docker compose up -d`
+- Start local Redis instance: `docker compose -f .dev/compose.yaml up -d`
 - Start application: `npm run start`
 
 ## Testing
 
-- Start local Redis instance: `docker compose up -d`
+- Start local Redis instance: `docker compose -f .dev/compose.yaml up -d`
 - Start application: `npm run start`
 - Start tests: `npm run test:supertest`
 
