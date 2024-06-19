@@ -179,7 +179,7 @@ export class WebsocketGateway
     }
 
     // Join user
-    const colorId = room.getColorModifier().nextColorId();
+    const colorId = room.getColorModifier().getNextColorId();
     const user = room
       .getUserModifier()
       .makeUserModel(
