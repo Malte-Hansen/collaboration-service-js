@@ -3,7 +3,7 @@ import { Color } from 'src/util/color';
 export class ColorModifier {
   private colors: Map<number, Color>;
 
-  private counters: Map<number, number>;
+  private colorAssignmentCount: Map<number, number>;
 
   constructor() {
     this.colors = new Map();
@@ -16,33 +16,36 @@ export class ColorModifier {
     this.colors.set(6, { colorId: 6, red: 0, green: 175, blue: 206 }); // ocean blue
     this.colors.set(7, { colorId: 7, red: 241, green: 141, blue: 0 }); // orange
 
-    this.counters = new Map();
-    for (let i = 0; i < this.colors.size; i++) {
-      this.counters.set(i, 0);
-    }
+    this.colorAssignmentCount = new Map();
+    this.colors.forEach((_, colorId) => {
+      this.colorAssignmentCount.set(colorId, 0);
+    });
   }
 
-  nextColorId(): number {
+  getNextColorId(): number {
     let minCount = Number.MAX_VALUE;
     let minCountColorId = null;
-    for (const [colorId, count] of this.counters.entries()) {
+
+    // Find the color with the fewest assignments
+    this.colorAssignmentCount.forEach((count, colorId) => {
       if (count < minCount) {
         minCount = count;
         minCountColorId = colorId;
       }
-    }
+    });
+
     return minCountColorId;
   }
 
   assignColor(colorId: number): Color {
-    const count = this.counters.get(colorId);
-    this.counters.set(colorId, count + 1);
+    const count = this.colorAssignmentCount.get(colorId);
+    this.colorAssignmentCount.set(colorId, count + 1);
     return this.colors.get(colorId);
   }
 
   unassignColor(colorId: number): void {
-    const count = this.counters.get(colorId);
-    this.counters.set(colorId, count - 1);
+    const count = this.colorAssignmentCount.get(colorId);
+    this.colorAssignmentCount.set(colorId, count - 1);
   }
 
   serializeColor(color: Color): number[] {
