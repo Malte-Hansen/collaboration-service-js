@@ -128,6 +128,7 @@ import {
   USER_DISCONNECTED_EVENT,
   UserDisconnectedMessage,
 } from 'src/message/client/sendable/user-disconnected-message';
+import { ChatMessage, CHAT_MESSAGE_EVENT } from 'src/message/client/receivable/chat-message';
 import { PublishIdMessage } from 'src/message/pubsub/publish-id-message';
 import { Room } from 'src/model/room-model';
 import { PublisherService } from 'src/publisher/publisher.service';
@@ -808,7 +809,23 @@ export class WebsocketGateway
       message.objectId,
     );
   }
-
+  
+  @SubscribeMessage(CHAT_MESSAGE_EVENT)
+  async handleChatMessage(
+    @MessageBody() message: ChatMessage,
+    @ConnectedSocket() client: Socket,
+  ): Promise<void> {
+    const roomMessage =
+    this.messageFactoryService.makeRoomForwardMessage<ChatMessage>(
+      client,
+      message,
+    );
+    this.publisherService.publishRoomForwardMessage(
+      CHAT_MESSAGE_EVENT,
+      roomMessage,
+    );
+  }
+  
   @SubscribeMessage(APP_CLOSED_EVENT)
   async handleAppClosedMessage(
     @MessageBody() message: AppClosedMessage,
