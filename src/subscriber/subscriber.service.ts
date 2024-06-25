@@ -17,6 +17,10 @@ import {
   CHANGE_LANDSCAPE_EVENT,
   ChangeLandscapeMessage,
 } from 'src/message/client/receivable/change-landscape-message';
+import { 
+  CHAT_MESSAGE_EVENT, 
+  ChatMessage 
+} from 'src/message/client/receivable/chat-message';
 import {
   COMPONENT_UPDATE_EVENT,
   ComponentUpdateMessage,
@@ -191,6 +195,9 @@ export class SubscriberService {
     );
     listener.set(JOIN_VR_EVENT, (msg: any) =>
       this.handleJoinVrEvent(JOIN_VR_EVENT, msg),
+    );
+    listener.set(CHAT_MESSAGE_EVENT, (msg: any) =>
+      this.handleChatMessageEvent(CHAT_MESSAGE_EVENT, msg),
     );
 
     // Subscribe to Redis channels
@@ -696,6 +703,20 @@ export class SubscriberService {
     const message = roomMessage.message;
     room.getDetachedMenuModifier().closeDetachedMenu(message.menuId);
     this.websocketGateway.sendBroadcastForwardedMessage(
+      event,
+      roomMessage.roomId,
+      { userId: roomMessage.userId, originalMessage: message },
+    );
+  }
+
+  private handleChatMessageEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<ChatMessage>,
+  ) {
+    const room = this.roomService.lookupRoom(roomMessage.roomId);
+    const message = roomMessage.message;
+    console.log('Message received in subscriber:' + message.msg);
+    this.websocketGateway.sendBroadcastMessage(
       event,
       roomMessage.roomId,
       { userId: roomMessage.userId, originalMessage: message },
