@@ -21,6 +21,10 @@ import {
   CHAT_MESSAGE_EVENT, 
   ChatMessage 
 } from 'src/message/client/receivable/chat-message';
+import { 
+  CHAT_SYNC_EVENT, 
+  ChatSynchronizeResponse
+} from 'src/message/client/sendable/chat-sync-response';
 import {
   COMPONENT_UPDATE_EVENT,
   ComponentUpdateMessage,
@@ -198,6 +202,9 @@ export class SubscriberService {
     );
     listener.set(CHAT_MESSAGE_EVENT, (msg: any) =>
       this.handleChatMessageEvent(CHAT_MESSAGE_EVENT, msg),
+    );
+    listener.set(CHAT_SYNC_EVENT, (msg: any) =>
+      this.handleChatSyncEvent(CHAT_SYNC_EVENT, msg),
     );
 
     // Subscribe to Redis channels
@@ -715,7 +722,20 @@ export class SubscriberService {
   ) {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const message = roomMessage.message;
-    console.log('Message received in subscriber:' + message.msg);
+    this.websocketGateway.sendBroadcastMessage(
+      event,
+      roomMessage.roomId,
+      { userId: roomMessage.userId, originalMessage: message },
+    );
+  }
+
+  private handleChatSyncEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<ChatSynchronizeResponse[]>,
+  ) {
+    const room = this.roomService.lookupRoom(roomMessage.roomId);
+    const message = roomMessage.message;
+    console.log("userId here : "+ message.at(0).userId);
     this.websocketGateway.sendBroadcastMessage(
       event,
       roomMessage.roomId,
