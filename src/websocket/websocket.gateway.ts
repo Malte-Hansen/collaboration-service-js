@@ -128,7 +128,14 @@ import {
   USER_DISCONNECTED_EVENT,
   UserDisconnectedMessage,
 } from 'src/message/client/sendable/user-disconnected-message';
-import { ChatMessage, CHAT_MESSAGE_EVENT } from 'src/message/client/receivable/chat-message';
+import { 
+  ChatMessage, 
+  CHAT_MESSAGE_EVENT 
+} from 'src/message/client/receivable/chat-message';
+import { 
+  CHAT_SYNC_EVENT, 
+  ChatSynchronizeMessage 
+} from 'src/message/client/receivable/chat-sync-message';
 import { PublishIdMessage } from 'src/message/pubsub/publish-id-message';
 import { Room } from 'src/model/room-model';
 import { PublisherService } from 'src/publisher/publisher.service';
@@ -138,6 +145,8 @@ import { TicketService } from 'src/ticket/ticket.service';
 import { Session } from 'src/util/session';
 import { Ticket } from 'src/util/ticket';
 import { VisualizationMode } from 'src/util/visualization-mode';
+import { ChatService } from 'src/chat/chat.service';
+import { ChatSynchronizeResponse } from 'src/message/client/sendable/chat-sync-response';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway
@@ -151,6 +160,7 @@ export class WebsocketGateway
     private readonly idGenerationService: IdGenerationService,
     private readonly lockService: LockService,
     private readonly publisherService: PublisherService,
+    private chatService: ChatService,
   ) {}
 
   @WebSocketServer()
@@ -820,8 +830,30 @@ export class WebsocketGateway
       client,
       message,
     );
+    const session = this.sessionService.lookupSession(client);
+    const roomId = session.getRoom().getRoomId();
+    this.chatService.addMessage(roomId, message);
     this.publisherService.publishRoomForwardMessage(
       CHAT_MESSAGE_EVENT,
+      roomMessage,
+    );
+  }
+
+  @SubscribeMessage(CHAT_SYNC_EVENT)
+  async handleChatSyncEvent(
+    @MessageBody() message: ChatSynchronizeMessage,
+    @ConnectedSocket() client: Socket,
+  ): Promise<void> {
+    const session = this.sessionService.lookupSession(client);
+    const roomId = session.getRoom().getRoomId();
+    const chatmsgs = this.chatService.getChatMessages(roomId);
+    const roomMessage =
+    this.messageFactoryService.makeRoomForwardMessage<ChatSynchronizeResponse[]>(
+      client,
+      chatmsgs,
+    );
+    this.publisherService.publishRoomForwardMessage(
+      CHAT_SYNC_EVENT,
       roomMessage,
     );
   }
