@@ -735,7 +735,6 @@ export class SubscriberService {
   ) {
     const room = this.roomService.lookupRoom(roomMessage.roomId);
     const message = roomMessage.message;
-    console.log("userId here : "+ message.at(0).userId);
     this.websocketGateway.sendBroadcastMessage(
       event,
       roomMessage.roomId,

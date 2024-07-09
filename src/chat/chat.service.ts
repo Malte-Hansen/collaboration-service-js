@@ -15,8 +15,6 @@ export class ChatService {
    * @param message The new message
    */
   addMessage(roomId: string, message: ChatMessage): void {
-    console.log("Added message" + message.msg + "with userId:" + message.userId + "to roomId:" + roomId)
-
     const roomMessages = this.messages.get(roomId) || [];
     this.messages.set(roomId, [...roomMessages, message]);
   }
