@@ -17,13 +17,13 @@ import {
   CHANGE_LANDSCAPE_EVENT,
   ChangeLandscapeMessage,
 } from 'src/message/client/receivable/change-landscape-message';
-import { 
-  CHAT_MESSAGE_EVENT, 
-  ChatMessage 
+import {
+  CHAT_MESSAGE_EVENT,
+  ChatMessage,
 } from 'src/message/client/receivable/chat-message';
-import { 
-  CHAT_SYNC_EVENT, 
-  ChatSynchronizeResponse
+import {
+  CHAT_SYNC_EVENT,
+  ChatSynchronizeResponse,
 } from 'src/message/client/sendable/chat-sync-response';
 import {
   COMPONENT_UPDATE_EVENT,
@@ -369,7 +369,9 @@ export class SubscriberService {
 
     // Delete room if empty
     if (room.getUserModifier().getUsers().length == 0) {
-      this.roomService.deleteRoom(room.getRoomId());
+      const roomId = room.getRoomId();
+      this.websocketGateway.deleteEmptyChatRoom(roomId);
+      this.roomService.deleteRoom(roomId);
     }
     this.websocketGateway.sendBroadcastMessage(
       event,
@@ -720,12 +722,10 @@ export class SubscriberService {
     event: string,
     roomMessage: RoomForwardMessage<ChatMessage>,
   ) {
-    const room = this.roomService.lookupRoom(roomMessage.roomId);
     const message = roomMessage.message;
-    this.websocketGateway.sendBroadcastMessage(
-      event,
-      roomMessage.roomId,
-      { userId: roomMessage.userId, originalMessage: message },
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message},
     );
   }
 
@@ -733,12 +733,10 @@ export class SubscriberService {
     event: string,
     roomMessage: RoomForwardMessage<ChatSynchronizeResponse[]>,
   ) {
-    const room = this.roomService.lookupRoom(roomMessage.roomId);
     const message = roomMessage.message;
-    this.websocketGateway.sendBroadcastMessage(
-      event,
-      roomMessage.roomId,
-      { userId: roomMessage.userId, originalMessage: message },
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message},
     );
   }
 }
