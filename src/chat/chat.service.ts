@@ -24,8 +24,17 @@ export class ChatService {
    *
    * @param msgId Id of the message to be removed
    */
-  removeMessage(msgId: number): void {
+  removeMessage(roomId: string, msgId: number): void {
     //TODO: Implement msgId and remove message here
+  }
+
+  /**
+   * Removes room key from messages (and therefore deletes the messages)
+   *
+   * @param roomId Id of the room to be removed
+   */
+  removeChatRoom(roomId: string): void {
+    this.messages.delete(roomId)
   }
 
   /**
