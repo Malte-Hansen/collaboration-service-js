@@ -5,4 +5,7 @@ export type ChatMessage = {
   msg: string;
   userName: string;
   timestamp: string;
+  isEvent: boolean;
+  eventType: string;
+  eventData: any[];
 };
