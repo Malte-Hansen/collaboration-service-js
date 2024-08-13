@@ -160,7 +160,7 @@ export class WebsocketGateway
     private readonly idGenerationService: IdGenerationService,
     private readonly lockService: LockService,
     private readonly publisherService: PublisherService,
-    private chatService: ChatService,
+    private readonly chatService: ChatService,
   ) {}
 
   @WebSocketServer()
@@ -258,6 +258,10 @@ export class WebsocketGateway
         message,
       ),
     );
+  }
+
+  deleteEmptyChatRoom(roomId: string) {
+    this.chatService.removeChatRoom(roomId);
   }
 
   // UTIL
