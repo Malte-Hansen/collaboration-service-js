@@ -147,6 +147,11 @@ import { Ticket } from 'src/util/ticket';
 import { VisualizationMode } from 'src/util/visualization-mode';
 import { ChatService } from 'src/chat/chat.service';
 import { ChatSynchronizeResponse } from 'src/message/client/sendable/chat-sync-response';
+import { 
+  USER_MUTE_EVENT,
+  UserMuteUpdate
+} from 'src/message/client/receivable/mute-update-message';
+import { USER_KICK_EVENT, UserKickEvent } from 'src/message/client/receivable/user-kick-event';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway
@@ -836,11 +841,30 @@ export class WebsocketGateway
     );
     const session = this.sessionService.lookupSession(client);
     const roomId = session.getRoom().getRoomId();
-    this.chatService.addMessage(roomId, message);
-    this.publisherService.publishRoomForwardMessage(
-      CHAT_MESSAGE_EVENT,
-      roomMessage,
-    );
+
+    if(!this.chatService.isUserMuted(roomId, message.userId)) {
+      this.chatService.addMessage(roomId, message);
+      this.publisherService.publishRoomForwardMessage(
+        CHAT_MESSAGE_EVENT,
+        roomMessage,
+      );
+    }
+  }
+
+  @SubscribeMessage(USER_MUTE_EVENT)
+  async handleMuteEvent(
+    @MessageBody() message: UserMuteUpdate,
+    @ConnectedSocket() client: Socket,
+  ): Promise<void> {
+    const session = this.sessionService.lookupSession(client);
+    const roomId = session.getRoom().getRoomId();
+    const userId = message.userId;
+
+    if(this.chatService.isUserMuted(roomId, userId)) {
+      this.chatService.unmuteUser(roomId, userId);
+    } else {
+      this.chatService.muteUser(roomId, userId);
+    }
   }
 
   @SubscribeMessage(CHAT_SYNC_EVENT)
@@ -858,6 +882,25 @@ export class WebsocketGateway
     );
     this.publisherService.publishRoomForwardMessage(
       CHAT_SYNC_EVENT,
+      roomMessage,
+    );
+  }
+
+  @SubscribeMessage(USER_KICK_EVENT)
+  async handleKickEvent(
+    @MessageBody() message: UserKickEvent,
+    @ConnectedSocket() client: Socket,
+  ): Promise<void> {
+    const roomMessage =
+    this.messageFactoryService.makeRoomForwardMessage<UserKickEvent>(
+      client,
+      message,
+    );
+    const session = this.sessionService.lookupSession(client);
+    const roomId = session.getRoom().getRoomId();
+
+    this.publisherService.publishRoomForwardMessage(
+      USER_KICK_EVENT,
       roomMessage,
     );
   }
