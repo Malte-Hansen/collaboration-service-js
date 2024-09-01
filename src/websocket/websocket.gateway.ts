@@ -152,6 +152,7 @@ import {
   UserMuteUpdate
 } from 'src/message/client/receivable/mute-update-message';
 import { USER_KICK_EVENT, UserKickEvent } from 'src/message/client/receivable/user-kick-event';
+import { MESSAGE_DELETE_EVENT, MessageDeleteEvent } from 'src/message/client/receivable/delete-message';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway
@@ -834,21 +835,25 @@ export class WebsocketGateway
     @MessageBody() message: ChatMessage,
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
+    const session = this.sessionService.lookupSession(client);
+    const roomId = session.getRoom().getRoomId();
+
+    if(this.chatService.isUserMuted(roomId, message.userId)) {
+      return;
+    }
+    message.msgId = this.chatService.getNewMessageId();
+
     const roomMessage =
     this.messageFactoryService.makeRoomForwardMessage<ChatMessage>(
       client,
       message,
     );
-    const session = this.sessionService.lookupSession(client);
-    const roomId = session.getRoom().getRoomId();
 
-    if(!this.chatService.isUserMuted(roomId, message.userId)) {
-      this.chatService.addMessage(roomId, message);
-      this.publisherService.publishRoomForwardMessage(
-        CHAT_MESSAGE_EVENT,
-        roomMessage,
-      );
-    }
+    this.chatService.addMessage(roomId, message);
+    this.publisherService.publishRoomForwardMessage(
+      CHAT_MESSAGE_EVENT,
+      roomMessage,
+    );
   }
 
   @SubscribeMessage(USER_MUTE_EVENT)
@@ -901,6 +906,26 @@ export class WebsocketGateway
 
     this.publisherService.publishRoomForwardMessage(
       USER_KICK_EVENT,
+      roomMessage,
+    );
+  }
+
+  @SubscribeMessage(MESSAGE_DELETE_EVENT)
+  async handleMessageDeleteEvent(
+    @MessageBody() message: MessageDeleteEvent,
+    @ConnectedSocket() client: Socket,
+  ): Promise<void> {
+    const roomMessage =
+    this.messageFactoryService.makeRoomForwardMessage<MessageDeleteEvent>(
+      client,
+      message,
+    );
+    const session = this.sessionService.lookupSession(client);
+    const roomId = session.getRoom().getRoomId();
+    this.chatService.removeMessage(roomId, message.msgId);
+
+    this.publisherService.publishRoomForwardMessage(
+      MESSAGE_DELETE_EVENT,
       roomMessage,
     );
   }

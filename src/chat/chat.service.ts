@@ -5,10 +5,12 @@ import { ChatMessage } from 'src/message/client/receivable/chat-message';
 export class ChatService {
   private messages: Map<String, ChatMessage[]>;
   private mutedUser: Map<String, String[]>;
+  private msgId: number;
 
   constructor() {
     this.messages = new Map<String, ChatMessage[]>();
     this.mutedUser = new Map<String, String[]>();
+    this.msgId = 1;
   }
 
   /**
@@ -24,6 +26,8 @@ export class ChatService {
     }
   }
 
+
+
   /**
    * Removes a messsage
    *
@@ -31,7 +35,9 @@ export class ChatService {
    * @param msgId Id of the message to be removed
    */
   removeMessage(roomId: string, msgId: number): void {
-    //TODO: Implement msgId and remove message here
+    let roomMessages = this.messages.get(roomId) || [];
+    roomMessages = roomMessages.filter((message) => message.msgId !== msgId);
+    this.messages.set(roomId, roomMessages);
   }
 
   /**
@@ -84,5 +90,9 @@ export class ChatService {
    */
   getChatMessages(roomId: string): ChatMessage[] {
     return this.messages.get(roomId) || [];
+  }
+
+  getNewMessageId() {
+    return this.msgId++;
   }
 }
