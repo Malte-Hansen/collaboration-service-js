@@ -247,11 +247,25 @@ export class WebsocketGateway
     if (!session) {
       return;
     }
+    const chatMessage : ChatMessage = {
+      msgId: 0,
+      userId: session.getUser().getId(),
+      msg: `${session.getUser().getUserName()}(${session.getUser().getId()}) disconnected from room ${session.getRoom().getRoomId()}`,
+      userName: session.getUser().getUserName(),
+      timestamp: '',
+      isEvent: true,
+      eventType: 'disconnection_event',
+      eventData: []
+    }
+
+    this.handleChatMessage(chatMessage, client);
 
     this.sessionService.unregister(session);
 
     // Release all locks
     this.lockService.releaseAllLockByUser(session.getUser());
+
+    
 
     const message: UserDisconnectedMessage = {
       id: session.getUser().getId(),
@@ -268,6 +282,12 @@ export class WebsocketGateway
 
   deleteEmptyChatRoom(roomId: string) {
     this.chatService.removeChatRoom(roomId);
+  }
+
+  private getTime() {
+    const h = new Date().getHours();
+    const m = new Date().getMinutes();
+    return `${h}:${m < 10 ? '0' + m : m}`;
   }
 
   // UTIL
@@ -842,6 +862,7 @@ export class WebsocketGateway
       return;
     }
     message.msgId = this.chatService.getNewMessageId();
+    message.timestamp = this.getTime();
 
     const roomMessage =
     this.messageFactoryService.makeRoomForwardMessage<ChatMessage>(
@@ -922,7 +943,7 @@ export class WebsocketGateway
     );
     const session = this.sessionService.lookupSession(client);
     const roomId = session.getRoom().getRoomId();
-    this.chatService.removeMessage(roomId, message.msgId);
+    message.msgId.forEach((msgId) => this.chatService.removeMessage(roomId, msgId))
 
     this.publisherService.publishRoomForwardMessage(
       MESSAGE_DELETE_EVENT,
