@@ -660,11 +660,11 @@ export class SubscriberService {
     room
       .getUserModifier()
       .updateControllerPose(user.getController(1), message.controller2);
-    this.websocketGateway.sendUserPositionsMessage(roomMessage.roomId, {
-      userId: roomMessage.userId,
-      originalMessage: message,
-    });
-    this.websocketGateway;
+    this.websocketGateway.sendBroadcastForwardedMessage(
+      event,
+      roomMessage.roomId,
+      { userId: roomMessage.userId, originalMessage: message },
+    );
   }
 
   private handleTimestampUpdateTimerEvent(

@@ -46,7 +46,7 @@ test:
   script:
     - npm run start &
     - sleep 10
-    - npm run test:supertest
+    - npm run test
 
 deploy-main-amd64:
   extends:

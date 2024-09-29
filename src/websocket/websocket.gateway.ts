@@ -196,7 +196,7 @@ export class WebsocketGateway
     }
 
     // Join user
-    const colorId = room.getColorModifier().nextColorId();
+    const colorId = room.getColorModifier().getNextColorId();
     const user = room
       .getUserModifier()
       .makeUserModel(
@@ -320,33 +320,6 @@ export class WebsocketGateway
     message: any,
   ): void {
     this.server.to(client.id).emit(event, message);
-  }
-
-  /**
-   * Broadcasts a user's position to all AR/VR and spectating clients within a room. Excludes the intial sender of the message.
-   *
-   * @param roomId The ID of the room
-   * @param message The message which encapsulated the user's position
-   */
-  sendUserPositionsMessage(
-    roomId: string,
-    message: ForwardedMessage<UserPositionsMessage>,
-  ): void {
-    const userId = message.userId;
-    const client = this.sessionService.lookupSocket(userId);
-    if (client) {
-      // Exclude sender of the message if it is connected to the server
-      client
-        .to(this.getVrRoom(roomId))
-        .to(this.getSpectatingRoom(roomId))
-        .emit(USER_POSITIONS_EVENT, message);
-    } else {
-      // Otherwise send to all clients
-      this.server
-        .to(this.getVrRoom(roomId))
-        .to(this.getSpectatingRoom(roomId))
-        .emit(USER_POSITIONS_EVENT, message);
-    }
   }
 
   /**
