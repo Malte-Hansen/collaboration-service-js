@@ -918,7 +918,7 @@ export class WebsocketGateway
       );
     const session = this.sessionService.lookupSession(client);
     const roomId = session.getRoom().getRoomId();
-    message.msgId.forEach((msgId) =>
+    message.msgIds.forEach((msgId) =>
       this.chatService.removeMessage(roomId, msgId),
     );
 
