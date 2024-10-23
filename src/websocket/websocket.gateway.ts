@@ -899,8 +899,6 @@ export class WebsocketGateway
         client,
         message,
       );
-    const session = this.sessionService.lookupSession(client);
-    const roomId = session.getRoom().getRoomId();
 
     this.publisherService.publishRoomForwardMessage(
       USER_KICK_EVENT,
