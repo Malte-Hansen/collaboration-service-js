@@ -18,6 +18,14 @@ import {
   ChangeLandscapeMessage,
 } from 'src/message/client/receivable/change-landscape-message';
 import {
+  CHAT_MESSAGE_EVENT,
+  ChatMessage,
+} from 'src/message/client/receivable/chat-message';
+import {
+  CHAT_SYNC_EVENT,
+  ChatSynchronizeResponse,
+} from 'src/message/client/sendable/chat-sync-response';
+import {
   COMPONENT_UPDATE_EVENT,
   ComponentUpdateMessage,
 } from 'src/message/client/receivable/component-update-message';
@@ -104,6 +112,14 @@ import { RoomStatusMessage } from 'src/message/pubsub/room-status-message';
 import { UserModel } from 'src/model/user-model';
 import { RoomService } from 'src/room/room.service';
 import { WebsocketGateway } from 'src/websocket/websocket.gateway';
+import {
+  USER_KICK_EVENT,
+  UserKickEvent,
+} from 'src/message/client/receivable/user-kick-event';
+import {
+  MESSAGE_DELETE_EVENT,
+  MessageDeleteEvent,
+} from 'src/message/client/receivable/delete-message';
 
 @Injectable()
 export class SubscriberService {
@@ -191,6 +207,18 @@ export class SubscriberService {
     );
     listener.set(JOIN_VR_EVENT, (msg: any) =>
       this.handleJoinVrEvent(JOIN_VR_EVENT, msg),
+    );
+    listener.set(CHAT_MESSAGE_EVENT, (msg: any) =>
+      this.handleChatMessageEvent(CHAT_MESSAGE_EVENT, msg),
+    );
+    listener.set(CHAT_SYNC_EVENT, (msg: any) =>
+      this.handleChatSyncEvent(CHAT_SYNC_EVENT, msg),
+    );
+    listener.set(USER_KICK_EVENT, (msg: any) =>
+      this.handleUserKickEvent(USER_KICK_EVENT, msg),
+    );
+    listener.set(MESSAGE_DELETE_EVENT, (msg: any) =>
+      this.handleMessageDeleteEvent(MESSAGE_DELETE_EVENT, msg),
     );
 
     // Subscribe to Redis channels
@@ -355,7 +383,9 @@ export class SubscriberService {
 
     // Delete room if empty
     if (room.getUserModifier().getUsers().length == 0) {
-      this.roomService.deleteRoom(room.getRoomId());
+      const roomId = room.getRoomId();
+      this.websocketGateway.deleteEmptyChatRoom(roomId);
+      this.roomService.deleteRoom(roomId);
     }
     this.websocketGateway.sendBroadcastMessage(
       event,
@@ -700,5 +730,49 @@ export class SubscriberService {
       roomMessage.roomId,
       { userId: roomMessage.userId, originalMessage: message },
     );
+  }
+
+  private handleChatMessageEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<ChatMessage>,
+  ) {
+    const message = roomMessage.message;
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message,
+    });
+  }
+
+  private handleChatSyncEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<ChatSynchronizeResponse[]>,
+  ) {
+    const message = roomMessage.message;
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message,
+    });
+  }
+
+  private handleUserKickEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<UserKickEvent>,
+  ) {
+    const message = roomMessage.message;
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message,
+    });
+  }
+
+  private handleMessageDeleteEvent(
+    event: string,
+    roomMessage: RoomForwardMessage<MessageDeleteEvent>,
+  ) {
+    const message = roomMessage.message;
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message,
+    });
   }
 }

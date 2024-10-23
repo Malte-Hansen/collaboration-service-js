@@ -12,6 +12,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { LockService } from './lock/lock.service';
 import { PublisherService } from './publisher/publisher.service';
 import { SubscriberService } from './subscriber/subscriber.service';
+import { ChatService } from './chat/chat.service';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SubscriberService } from './subscriber/subscriber.service';
     LockService,
     PublisherService,
     SubscriberService,
+    ChatService,
   ],
   exports: [],
 })
