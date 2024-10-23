@@ -1,4 +1,3 @@
 export const CHAT_SYNC_EVENT = 'chat_synchronization';
 
-export type ChatSynchronizeMessage = {
-};
+export type ChatSynchronizeMessage = object;

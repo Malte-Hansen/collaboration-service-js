@@ -128,13 +128,13 @@ import {
   USER_DISCONNECTED_EVENT,
   UserDisconnectedMessage,
 } from 'src/message/client/sendable/user-disconnected-message';
-import { 
-  ChatMessage, 
-  CHAT_MESSAGE_EVENT 
+import {
+  ChatMessage,
+  CHAT_MESSAGE_EVENT,
 } from 'src/message/client/receivable/chat-message';
-import { 
-  CHAT_SYNC_EVENT, 
-  ChatSynchronizeMessage 
+import {
+  CHAT_SYNC_EVENT,
+  ChatSynchronizeMessage,
 } from 'src/message/client/receivable/chat-sync-message';
 import { PublishIdMessage } from 'src/message/pubsub/publish-id-message';
 import { Room } from 'src/model/room-model';
@@ -147,12 +147,18 @@ import { Ticket } from 'src/util/ticket';
 import { VisualizationMode } from 'src/util/visualization-mode';
 import { ChatService } from 'src/chat/chat.service';
 import { ChatSynchronizeResponse } from 'src/message/client/sendable/chat-sync-response';
-import { 
+import {
   USER_MUTE_EVENT,
-  UserMuteUpdate
+  UserMuteUpdate,
 } from 'src/message/client/receivable/mute-update-message';
-import { USER_KICK_EVENT, UserKickEvent } from 'src/message/client/receivable/user-kick-event';
-import { MESSAGE_DELETE_EVENT, MessageDeleteEvent } from 'src/message/client/receivable/delete-message';
+import {
+  USER_KICK_EVENT,
+  UserKickEvent,
+} from 'src/message/client/receivable/user-kick-event';
+import {
+  MESSAGE_DELETE_EVENT,
+  MessageDeleteEvent,
+} from 'src/message/client/receivable/delete-message';
 
 @WebSocketGateway({ cors: true })
 export class WebsocketGateway
@@ -247,16 +253,18 @@ export class WebsocketGateway
     if (!session) {
       return;
     }
-    const chatMessage : ChatMessage = {
+    const chatMessage: ChatMessage = {
       msgId: 0,
       userId: session.getUser().getId(),
-      msg: `${session.getUser().getUserName()}(${session.getUser().getId()}) disconnected from room ${session.getRoom().getRoomId()}`,
+      msg: `${session.getUser().getUserName()}(${session
+        .getUser()
+        .getId()}) disconnected from room ${session.getRoom().getRoomId()}`,
       userName: session.getUser().getUserName(),
       timestamp: '',
       isEvent: true,
       eventType: 'disconnection_event',
-      eventData: []
-    }
+      eventData: [],
+    };
 
     this.handleChatMessage(chatMessage, client);
 
@@ -264,8 +272,6 @@ export class WebsocketGateway
 
     // Release all locks
     this.lockService.releaseAllLockByUser(session.getUser());
-
-    
 
     const message: UserDisconnectedMessage = {
       id: session.getUser().getId(),
@@ -822,7 +828,7 @@ export class WebsocketGateway
       message.objectId,
     );
   }
-  
+
   @SubscribeMessage(CHAT_MESSAGE_EVENT)
   async handleChatMessage(
     @MessageBody() message: ChatMessage,
@@ -831,17 +837,17 @@ export class WebsocketGateway
     const session = this.sessionService.lookupSession(client);
     const roomId = session.getRoom().getRoomId();
 
-    if(this.chatService.isUserMuted(roomId, message.userId)) {
+    if (this.chatService.isUserMuted(roomId, message.userId)) {
       return;
     }
     message.msgId = this.chatService.getNewMessageId();
     message.timestamp = this.getTime();
 
     const roomMessage =
-    this.messageFactoryService.makeRoomForwardMessage<ChatMessage>(
-      client,
-      message,
-    );
+      this.messageFactoryService.makeRoomForwardMessage<ChatMessage>(
+        client,
+        message,
+      );
 
     this.chatService.addMessage(roomId, message);
     this.publisherService.publishRoomForwardMessage(
@@ -859,7 +865,7 @@ export class WebsocketGateway
     const roomId = session.getRoom().getRoomId();
     const userId = message.userId;
 
-    if(this.chatService.isUserMuted(roomId, userId)) {
+    if (this.chatService.isUserMuted(roomId, userId)) {
       this.chatService.unmuteUser(roomId, userId);
     } else {
       this.chatService.muteUser(roomId, userId);
@@ -874,11 +880,9 @@ export class WebsocketGateway
     const session = this.sessionService.lookupSession(client);
     const roomId = session.getRoom().getRoomId();
     const chatmsgs = this.chatService.getChatMessages(roomId);
-    const roomMessage =
-    this.messageFactoryService.makeRoomForwardMessage<ChatSynchronizeResponse[]>(
-      client,
-      chatmsgs,
-    );
+    const roomMessage = this.messageFactoryService.makeRoomForwardMessage<
+      ChatSynchronizeResponse[]
+    >(client, chatmsgs);
     this.publisherService.publishRoomForwardMessage(
       CHAT_SYNC_EVENT,
       roomMessage,
@@ -891,10 +895,10 @@ export class WebsocketGateway
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
     const roomMessage =
-    this.messageFactoryService.makeRoomForwardMessage<UserKickEvent>(
-      client,
-      message,
-    );
+      this.messageFactoryService.makeRoomForwardMessage<UserKickEvent>(
+        client,
+        message,
+      );
     const session = this.sessionService.lookupSession(client);
     const roomId = session.getRoom().getRoomId();
 
@@ -910,20 +914,22 @@ export class WebsocketGateway
     @ConnectedSocket() client: Socket,
   ): Promise<void> {
     const roomMessage =
-    this.messageFactoryService.makeRoomForwardMessage<MessageDeleteEvent>(
-      client,
-      message,
-    );
+      this.messageFactoryService.makeRoomForwardMessage<MessageDeleteEvent>(
+        client,
+        message,
+      );
     const session = this.sessionService.lookupSession(client);
     const roomId = session.getRoom().getRoomId();
-    message.msgId.forEach((msgId) => this.chatService.removeMessage(roomId, msgId))
+    message.msgId.forEach((msgId) =>
+      this.chatService.removeMessage(roomId, msgId),
+    );
 
     this.publisherService.publishRoomForwardMessage(
       MESSAGE_DELETE_EVENT,
       roomMessage,
     );
   }
-  
+
   @SubscribeMessage(APP_CLOSED_EVENT)
   async handleAppClosedMessage(
     @MessageBody() message: AppClosedMessage,

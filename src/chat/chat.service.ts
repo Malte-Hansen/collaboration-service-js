@@ -3,13 +3,13 @@ import { ChatMessage } from 'src/message/client/receivable/chat-message';
 
 @Injectable()
 export class ChatService {
-  private messages: Map<String, ChatMessage[]>;
-  private mutedUser: Map<String, String[]>;
+  private messages: Map<string, ChatMessage[]>;
+  private mutedUser: Map<string, string[]>;
   private msgId: number;
 
   constructor() {
-    this.messages = new Map<String, ChatMessage[]>();
-    this.mutedUser = new Map<String, String[]>();
+    this.messages = new Map<string, ChatMessage[]>();
+    this.mutedUser = new Map<string, string[]>();
     this.msgId = 1;
   }
 
@@ -20,13 +20,11 @@ export class ChatService {
    * @param message The new message
    */
   addMessage(roomId: string, message: ChatMessage): void {
-    if(!this.isUserMuted(roomId, message.userId)) {
+    if (!this.isUserMuted(roomId, message.userId)) {
       const roomMessages = this.messages.get(roomId) || [];
       this.messages.set(roomId, [...roomMessages, message]);
     }
   }
-
-
 
   /**
    * Removes a messsage
@@ -65,7 +63,7 @@ export class ChatService {
 
   /**
    * Checks if a user is muted
-   * 
+   *
    * @param roomId The room where the user is checked
    * @param userId The id of the user to check
    * @returns True if the user is muted, otherwise false
@@ -80,7 +78,7 @@ export class ChatService {
    * @param roomId Id of the room to be removed
    */
   removeChatRoom(roomId: string): void {
-    this.messages.delete(roomId)
+    this.messages.delete(roomId);
   }
 
   /**

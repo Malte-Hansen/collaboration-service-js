@@ -112,8 +112,14 @@ import { RoomStatusMessage } from 'src/message/pubsub/room-status-message';
 import { UserModel } from 'src/model/user-model';
 import { RoomService } from 'src/room/room.service';
 import { WebsocketGateway } from 'src/websocket/websocket.gateway';
-import { USER_KICK_EVENT, UserKickEvent } from 'src/message/client/receivable/user-kick-event';
-import { MESSAGE_DELETE_EVENT, MessageDeleteEvent } from 'src/message/client/receivable/delete-message';
+import {
+  USER_KICK_EVENT,
+  UserKickEvent,
+} from 'src/message/client/receivable/user-kick-event';
+import {
+  MESSAGE_DELETE_EVENT,
+  MessageDeleteEvent,
+} from 'src/message/client/receivable/delete-message';
 
 @Injectable()
 export class SubscriberService {
@@ -214,7 +220,6 @@ export class SubscriberService {
     listener.set(MESSAGE_DELETE_EVENT, (msg: any) =>
       this.handleMessageDeleteEvent(MESSAGE_DELETE_EVENT, msg),
     );
-
 
     // Subscribe to Redis channels
     for (const channel of listener.keys()) {
@@ -734,8 +739,8 @@ export class SubscriberService {
     const message = roomMessage.message;
     this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
       userId: roomMessage.userId,
-      originalMessage: message},
-    );
+      originalMessage: message,
+    });
   }
 
   private handleChatSyncEvent(
@@ -745,8 +750,8 @@ export class SubscriberService {
     const message = roomMessage.message;
     this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
       userId: roomMessage.userId,
-      originalMessage: message},
-    );
+      originalMessage: message,
+    });
   }
 
   private handleUserKickEvent(
@@ -754,11 +759,10 @@ export class SubscriberService {
     roomMessage: RoomForwardMessage<UserKickEvent>,
   ) {
     const message = roomMessage.message;
-    this.websocketGateway.sendBroadcastMessage(
-      event, 
-      roomMessage.roomId, 
-      { userId: roomMessage.userId, originalMessage: message},
-    );
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message,
+    });
   }
 
   private handleMessageDeleteEvent(
@@ -766,10 +770,9 @@ export class SubscriberService {
     roomMessage: RoomForwardMessage<MessageDeleteEvent>,
   ) {
     const message = roomMessage.message;
-    this.websocketGateway.sendBroadcastMessage(
-      event, 
-      roomMessage.roomId, 
-      { userId: roomMessage.userId, originalMessage: message},
-    );
+    this.websocketGateway.sendBroadcastMessage(event, roomMessage.roomId, {
+      userId: roomMessage.userId,
+      originalMessage: message,
+    });
   }
 }
