@@ -1,6 +1,6 @@
 ## Description
 
-Re-engineered Collaboration Service. The corresponding frontend branch is availabe [here](https://git.se.informatik.uni-kiel.de/ExplorViz/code/frontend/-/tree/socketio?ref_type=heads).
+Service that enables collaborative features for ExplorViz. The corresponding frontend branch is available [here](https://git.se.informatik.uni-kiel.de/ExplorViz/code/frontend/-/tree/socketio?ref_type=heads).
 
 ## Installation
 
