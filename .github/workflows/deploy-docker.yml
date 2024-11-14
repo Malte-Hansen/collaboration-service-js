@@ -92,7 +92,7 @@ jobs:
       - name: Download dist artifact
         uses: actions/download-artifact@v4
         with:
-          name: prod-assets
+          name: dist
           path: dist/
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
